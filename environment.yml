@@ -1,0 +1,39 @@
+name: interact 
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+  - nvidia
+dependencies:
+  - python=3.8
+  - igl
+  - cudatoolkit=11.3
+  - pytorch::pytorch=1.11.0
+  - trimesh
+  - tqdm
+  - opencv
+  - scikit-learn
+  - matplotlib
+  - Pillow
+  - PyYAML
+  - numpy
+  - scipy
+  - pandas
+  - pip
+  - pip:
+        - "local-attention"
+        - "spacy"
+        - "smplx"
+        - "plyfile"
+        - "configer"
+        - "pyrender"
+        - "openmesh"
+        - "boto3"
+        - "torchgeometry"
+        - "rtree"
+        - "open3d"
+        - "setuptools"
+        - "git+https://github.com/nghorbani/human_body_prior.git"
+        - "pyopengl"
+        - "scikit-image"
+        - "dotmap"
