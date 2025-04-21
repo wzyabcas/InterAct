@@ -10,7 +10,6 @@
     <a href='' target='_blank'>Yunzhi Lu</a>&emsp;
     <a href='' target='_blank'>Shuchang Dong</a>&emsp;
     <a href='' target='_blank'>Hezi Jiang</a>&emsp;
-    <a href='' target='_blank'>Shuchang Dong</a>&emsp;
     <a href='' target='_blank'>Akshat Gupta</a>&emsp;
     <a href='https://yxw.web.illinois.edu/' target='_blank'>Yu-Xiong Wang</a>&emsp;
     <a href='https://lgui.web.illinois.edu/' target='_blank'>Liang-Yan Gui</a>&emsp;
