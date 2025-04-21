@@ -1,7 +1,7 @@
 <p align="center">
 <h1><strong>InterAct: Advancing Large-Scale Versatile 3D Human-Object Interaction Generation</strong></h1>
   <p align="center">
-    <a href='' target='_blank'>Sirui Xu</a><sup>*</sup>&emsp;
+    <a href='https://sirui-xu.github.io' target='_blank'>Sirui Xu</a><sup>*</sup>&emsp;
     <a href='' target='_blank'>Dongting Li</a><sup>*</sup>&emsp;
     <a href='' target='_blank'>Yucheng Zhang</a><sup>*</sup>&emsp;
     <a href='' target='_blank'>Xiyan Xu</a><sup>*</sup>&emsp;
@@ -25,12 +25,12 @@
 
 </p>
 <p align="center">
-  <a href='https://arxiv.org/abs/xxxx.xxxxx'>
-    <img src='https://img.shields.io/badge/Arxiv-xxxx.xxxxx-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a>
-  <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
-    <img src='https://img.shields.io/badge/Paper-PDF-yellow?style=flat&logo=arXiv&logoColor=yellow'></a>
-  <a href='https://sirui-xu.github.io/InterAct/'>
-    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a>
+<!--   <a href='https://arxiv.org/abs/xxxx.xxxxx'>
+    <img src='https://img.shields.io/badge/Arxiv-xxxx.xxxxx-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a> -->
+<!--   <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
+    <img src='https://img.shields.io/badge/Paper-PDF-yellow?style=flat&logo=arXiv&logoColor=yellow'></a> -->
+<!--   <a href='https://sirui-xu.github.io/InterAct'>
+    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a> -->
   <a href='https://github.com/wzyabcas/InterAct'>
     <img src='https://img.shields.io/badge/GitHub-Code-black?style=flat&logo=github&logoColor=white'></a>
 </p>
@@ -50,7 +50,7 @@
 
 ## General Description
 
-We introduce InterAct, a comprehensive large-scale 3D human-object interaction (HOI) benchmark enhanced with detailed text annotations. Originally comprising 21.81 hours of HOI data from diverse sources, the dataset is meticulously refined by correcting contact artifacts and augmented with varied motion patterns to extend the total duration to approximately 30 hours. It includes 34.1K sequence-level detailed text descriptions.
+We introduce InterAct, a comprehensive large-scale 3D human-object interaction (HOI) dataset, originally comprising 21.81 hours of HOI data consolidated from diverse sources, the dataset is meticulously refined by correcting contact artifacts and augmented with varied motion patterns to extend the total duration to approximately 30 hours. It includes 34.1K sequence-level detailed text descriptions.
 
 ## Dataset Download
 
@@ -444,7 +444,7 @@ Please also consider citing the specific sub-dataset you used from **InterAct** 
 
 @inproceedings{zhao2024imhoi,
     author    = {Zhao, Chengfeng and Zhang, Juze and Du, Jiashen and Shan, Ziwei and Wang, Junye and Yu, Jingyi and Wang, Jingya and Xu, Lan},
-    title     = {I'M HOI: Inertia-aware Monocular Capture of 3D Human-Object Interactions},
+    title     = {{I'M HOI}: Inertia-aware Monocular Capture of 3D Human-Object Interactions},
     booktitle = {CVPR},
     year      = {2024},
 }
