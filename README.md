@@ -43,7 +43,9 @@
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
 - [ ] Publish the paper on arXiv
 - [ ] Release the evaluation pipeline for the benchmark
+- [ ] Release the dataset with unified SMPL representation
 - [ ] Release HOI correction and augmentation data and pipeline
+- [ ] Release retargeted HOI dataset with unified human shape
 - [ ] Release baseline constructions for HOI generative tasks
 
 
