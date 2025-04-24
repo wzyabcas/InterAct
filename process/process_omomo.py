@@ -8,6 +8,7 @@ import joblib
 import torch
 from human_body_prior.body_model.body_model import BodyModel
 import pytorch3d.transforms as transforms 
+import shutil
 
 
 MOTION_PATH = './data/omomo/sequences'
@@ -340,7 +341,8 @@ def rotate_at_frame_w_obj(X, Q, obj_x, obj_q, trans2joint_list, parents, n_past=
 
 # process the objects
 if not os.path.exists(OBJECT_PATH):
-    os.rename(OBJECT_PATH_RAW, OBJECT_PATH)
+    # os.rename(OBJECT_PATH_RAW, OBJECT_PATH)
+    shutil.copytree(OBJECT_PATH_RAW, OBJECT_PATH)
 
     for object in os.listdir(OBJECT_PATH):
         for index in data_dict:
@@ -354,7 +356,12 @@ if not os.path.exists(OBJECT_PATH):
                 os.makedirs(os.path.join(OBJECT_PATH, f"{obj_name}"), exist_ok=True)
                 mesh_obj.export(os.path.join(OBJECT_PATH, f"{obj_name}/{obj_name}.obj"))
                 break
-
+    
+# delete .obj files
+for object in os.listdir(OBJECT_PATH):
+    if object.endswith('.obj'):
+        os.remove(os.path.join(OBJECT_PATH, object))
+    
 # process the sequences
 for index in data_dict:
     

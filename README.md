@@ -158,6 +158,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     ```
     pip install git+https://github.com/otaheri/chamfer_distance
     pip install git+https://github.com/otaheri/bps_torch
+    python -m spacy download en_core_web_sm
     ```
 
   - Option B: Manual setup
@@ -174,6 +175,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     Install remaining packages:
     ```
     pip install -r requirements.txt
+    python -m spacy download en_core_web_sm
     ```
 
     
@@ -325,6 +327,9 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
   ```bash
   python process/canonicalize_human.py
+  
+  # or multi_thread for speedup
+  python process/canonicalize_human_multi_thread.py
   ```
 
 - Sample object keypoints:
