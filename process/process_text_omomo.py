@@ -1,6 +1,7 @@
 import os
 
 import json
+import shutil
 
 data_root = './data'
 
@@ -12,7 +13,7 @@ for dataset in datasets:
 
     sequence_folder = os.path.join(dataset_path, 'sequences')
     sequence_seg_folder = os.path.join(dataset_path, 'sequences_seg')
-    omomo_text_folder = os.path.join(dataset_path, 'omomo_text_anno_json_data')
+    omomo_text_folder = os.path.join(dataset_path, 'raw', 'omomo_text_anno_json_data')
     # read sequences
     json_names = os.listdir(omomo_text_folder)
     for json_name in json_names:
@@ -29,15 +30,11 @@ for dataset in datasets:
         if not os.path.exists(human_path) or not os.path.exists(object_path):
             continue
         os.makedirs(sequence_seg_path, exist_ok=True)
-        os.rename(human_path, os.path.join(sequence_seg_path, 'human.npz'))
-        os.rename(object_path, os.path.join(sequence_seg_path, 'object.npz'))      
+        # os.rename(human_path, os.path.join(sequence_seg_path, 'human.npz'))
+        # os.rename(object_path, os.path.join(sequence_seg_path, 'object.npz'))  
+        shutil.copy(human_path, os.path.join(sequence_seg_path, 'human.npz'))
+        shutil.copy(object_path, os.path.join(sequence_seg_path, 'object.npz'))    
         # copy and seg text.txt
         with open(text_path, 'w') as f:
             f.write(json_content[sequence_name])
         print("Saved text to", text_path)
-
-    
-        
-
-        
-    

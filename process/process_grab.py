@@ -38,7 +38,7 @@ def params2torch(params, dtype = torch.float32):
     return {k: torch.from_numpy(v).type(dtype).to(device) for k, v in params.items()}
 
 def load_sbj_verts(sbj_id, seq_data):
-    mesh_path = os.path.join(data_root_folder,seq_data.body.vtemp)
+    mesh_path = os.path.join(body_root_folder,seq_data.body.vtemp)
     if sbj_id in sbj_info:
         sbj_vtemp = sbj_info[sbj_id]
     else:
@@ -50,6 +50,7 @@ sbj_info = {}
 data_root_folder = './data/grab'
 motion_folder = './data/grab/raw/grab'
 model_folder = './models'
+body_root_folder = './data/grab/raw/'
 OBJECT_PATH_RAW = './data/grab/raw/tools/object_meshes'
 OBJECT_PATH = './data/grab/objects'
 MOTION_PATH = './data/grab/sequences'
