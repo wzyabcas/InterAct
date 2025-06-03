@@ -47,7 +47,7 @@ def load_sbj_verts(sbj_id, seq_data):
     return sbj_vtemp
 
 sbj_info = {}
-data_root_folder = './data/grab'
+data_root_folder = './data/grab/raw'
 motion_folder = './data/grab/raw/grab'
 model_folder = './models'
 body_root_folder = './data/grab/raw/'

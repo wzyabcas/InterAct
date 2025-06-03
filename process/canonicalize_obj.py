@@ -12,7 +12,7 @@ if __name__ == "__main__":
         dataset_path = os.path.join(data_root, dataset)
         MOTION_PATH = os.path.join(dataset_path, 'sequences')
         OBJECT_PATH = os.path.join(dataset_path, 'objects')
-        obj_names = os.listdir(OBJECT_PATH)
+        obj_names = [name for name in os.listdir(OBJECT_PATH) if os.path.isdir(os.path.join(OBJECT_PATH, name))]
         for name in obj_names:
             print("Processing object:", name)
             mesh_obj = trimesh.load(os.path.join(OBJECT_PATH, f"{name}/{name}.obj"), force='mesh')

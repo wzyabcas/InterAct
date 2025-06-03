@@ -205,7 +205,9 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
   - **OMOMO**
 
-    Download the dataset from this [link](https://github.com/lijiaman/omomo_release).
+    Download the dataset from this [link](https://github.com/lijiaman/omomo_release), and download the text annotations from this [link](https://github.com/lijiaman/omomo_release/blob/main/omomo_text_anno.zip).
+
+    
 
     Expected File Structure:
     ```bash
@@ -245,7 +247,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │   ├── s1
     │       └── seq_name.npz      # Human and Object Motion 
         ...
-    └── tool
+    └── tools
         ├── object_meshes         # Object mesh
         ├── object_settings       
         ├── subject_meshes        # Subject mesh
