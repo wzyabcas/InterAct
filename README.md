@@ -28,8 +28,8 @@
     <img src='https://img.shields.io/badge/Arxiv-xxxx.xxxxx-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a> -->
 <!--   <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
     <img src='https://img.shields.io/badge/Paper-PDF-yellow?style=flat&logo=arXiv&logoColor=yellow'></a> -->
-<!--   <a href='https://sirui-xu.github.io/InterAct'>
-    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a> -->
+  <a href='https://sirui-xu.github.io/InterAct'>
+    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a>
   <a href='https://github.com/wzyabcas/InterAct'>
     <img src='https://img.shields.io/badge/GitHub-Code-black?style=flat&logo=github&logoColor=white'></a>
 </p>
