@@ -241,7 +241,7 @@ def process_sequence(dataset, name, MOTION_PATH, dataset_path, NEW_MOTION_PATH, 
             verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 10)
             markers = verts[:,markerset_smplx]
         elif dataset.upper() == 'INTERCAP':
-            verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 10, True)
+            verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 10, 12)
             markers = verts[:,markerset_smplx]
         elif dataset.upper() == 'OMOMO':
             verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 16)

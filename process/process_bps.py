@@ -23,6 +23,8 @@ if __name__ == "__main__":
         MOTION_PATH = os.path.join(dataset_path, 'sequences_canonical')
         OBJECT_PATH = os.path.join(dataset_path, 'objects')
         OBJECT_BPS_PATH = os.path.join(dataset_path, 'objects_bps')
+        
+        os.makedirs(OBJECT_BPS_PATH, exist_ok=True)  # create folder if not exist
         data_name = os.listdir(OBJECT_PATH)
         for k, name in tqdm(enumerate(data_name)):
             mesh_obj = trimesh.load(os.path.join(OBJECT_PATH, f"{name}/{name}.obj"), force='mesh')
