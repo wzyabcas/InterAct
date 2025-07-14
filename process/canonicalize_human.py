@@ -8,10 +8,12 @@ import smplx
 import trimesh
 from scipy.spatial.transform import Rotation
 
+
 from process.markerset import *
 import shutil
 from human_body_prior.body_model.body_model import BodyModel
-
+import sys
+sys.path.append('.')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 to_cpu = lambda tensor: tensor.detach().cpu().numpy()

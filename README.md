@@ -28,19 +28,22 @@
     <img src='https://img.shields.io/badge/Arxiv-xxxx.xxxxx-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a> -->
 <!--   <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
     <img src='https://img.shields.io/badge/Paper-PDF-yellow?style=flat&logo=arXiv&logoColor=yellow'></a> -->
-  <a href='https://sirui-xu.github.io/InterAct'>
-    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a>
+<a href='https://sirui-xu.github.io/InterAct'>
+    <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a> 
   <a href='https://github.com/wzyabcas/InterAct'>
     <img src='https://img.shields.io/badge/GitHub-Code-black?style=flat&logo=github&logoColor=white'></a>
 </p>
+
 
 ![](./assets/teaser.png)
 
 ## News
 - [2025-04-20] Initial release of the InterAct dataset
+- [2025-07-08] Release the proessing code for unified SMPL-H representation
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
+- [x] Release the proessing code for unified SMPL-H representation
 - [ ] Publish the paper on arXiv
 - [ ] Release the evaluation pipeline for the benchmark
 - [ ] Release the dataset with unified SMPL representation
@@ -353,6 +356,46 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
   ```
 
 </details> 
+
+<details>
+  <summary>Optional: Unify the motion to SMPL-H</summary>
+
+  - Data
+
+    Register on the [SMPL-X website](http://smpl-x.is.tue.mpg.de/), go to the
+    downloads section to get the correspondences and sample data,
+    by clicking on the *Model correspondences* button.
+    Create a folder
+    named `transfer_data` and extract the downloaded zip there. You should have the
+    following folder structure now:
+
+    ```bash
+    process/smpl_conversion/transfer_data
+    ├── meshes
+    │   ├── smpl
+    │   ├── smplx
+    ├── smpl2smplh_def_transfer.pkl
+    ├── smpl2smplx_deftrafo_setup.pkl
+    ├── smplh2smpl_def_transfer.pkl
+    ├── smplh2smplx_deftrafo_setup.pkl
+    ├── smplx2smpl_deftrafo_setup.pkl
+    ├── smplx2smplh_deftrafo_setup.pkl
+    ├── smplx_mask_ids.npy
+    ```
+
+  - Unify the SMPL representation by:
+
+    ```bash
+    cd ./process/smpl_conversion
+    python -m transfer_model --exp-cfg config_files/smplx2smplh.yaml --dataset grab
+    ```
+
+    `--dataset`: dataset in [grab, omomo, chairs, intercap]
+    
+    We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , sepcial thanks to them!
+
+</details>
+
 
 
 ## Data Loading 
