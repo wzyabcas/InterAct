@@ -328,7 +328,7 @@ def visualize_grab(name, MOTION_PATH):
     """
     vertices: (N, 10475, 3)
     """
-    motion_file = os.path.join(MOTION_PATH,name,'motion.npz')
+    motion_file = os.path.join(MOTION_PATH,name,'human.npz')
     seq_data = parse_npz(motion_file)
     n_comps = seq_data['n_comps']
     gender = seq_data['gender']
