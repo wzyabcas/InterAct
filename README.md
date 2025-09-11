@@ -44,7 +44,7 @@
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
 - [x] Release the proessing code for unified SMPL-H representation
-- [ ] Publish the paper on arXiv
+- [x] Publish the paper on arXiv
 - [ ] Release the evaluation pipeline for the benchmark
 - [ ] Release the dataset with unified SMPL representation
 - [ ] Release HOI correction and augmentation data and pipeline
