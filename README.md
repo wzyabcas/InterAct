@@ -443,16 +443,7 @@ To evaluate on our benchmark, execute the following steps
       --batch_size 64 \
       --dataset interact 
     ```
-    
-
 </details>
-
-
-
-​      
-
-​    
-
 
 
 ## Visualization
