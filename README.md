@@ -24,9 +24,9 @@
 
 </p>
 <p align="center">
-<!--   <a href='https://arxiv.org/abs/xxxx.xxxxx'>
-    <img src='https://img.shields.io/badge/Arxiv-xxxx.xxxxx-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a> -->
-<!--   <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
+  <a href='https://arxiv.org/pdf/2509.09555'>
+    <img src='https://img.shields.io/badge/Arxiv-2509.09555-A42C25?style=flat&logo=arXiv&logoColor=A42C25'></a>
+  <!-- <a href='https://arxiv.org/pdf/xxxx.xxxxx.pdf'>
     <img src='https://img.shields.io/badge/Paper-PDF-yellow?style=flat&logo=arXiv&logoColor=yellow'></a> -->
 <a href='https://sirui-xu.github.io/InterAct'>
     <img src='https://img.shields.io/badge/Project-Page-green?style=flat&logo=Google%20chrome&logoColor=green'></a> 
@@ -40,14 +40,18 @@
 ## News
 - [2025-04-20] Initial release of the InterAct dataset
 - [2025-07-08] Release the proessing code for unified SMPL-H representation
+- [2025-09-12] Publish the paper on arXiv
+- [2025-10-06] Release the hoi correction pipeline
+- [2025-10-06] Release the evaluation pipeline for text-to-hoi
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
 - [x] Release the proessing code for unified SMPL-H representation
 - [x] Publish the paper on arXiv
-- [ ] Release the evaluation pipeline for the benchmark
+- [x] Release the evaluation pipeline for the benchmark
+- [x] Release HOI correction pipeline
+- [ ] Release HOI correction data, augmentation data and pipeline
 - [ ] Release the dataset with unified SMPL representation
-- [ ] Release HOI correction and augmentation data and pipeline
 - [ ] Release retargeted HOI dataset with unified human shape
 - [ ] Release baseline constructions for HOI generative tasks
 
@@ -357,6 +361,29 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 </details> 
 
+
+<details>
+  <summary>Optional: HOI Correction</summary>
+
+  - Step1: Correct the full-body hoi by:
+
+    ```
+    python ./hoi_correction/optimize_fullbody.py --dataset behave
+    python ./hoi_correction/optimize_fullbody_intercap.py --dataset intercap
+    ```
+    
+  - Step2: Correct the hand by:
+
+    ```bash
+    python ./hoi_correction/optimize.py --dataset omomo
+    python ./hoi_correction/optimize_hand_behave.py --dataset behave
+    ```
+
+
+</details>
+
+
+
 <details>
   <summary>Optional: Unify the motion to SMPL-H</summary>
 
@@ -396,14 +423,40 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 </details>
 
-
-
 ## Data Loading 
 
 To load and explore our data, please refer to the [demo notebook](data_demo.ipynb).
 
+## Evaluation
+
+To evaluate on our benchmark, execute the following steps
+  <details>
+  <summary>1. Evaluate on the Text to HOI task</summary>
+
+  - Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `assets/eval`.
+
+  - Evaluate on the marker representation used in our paper by:
+
+    ```
+      python -m eval.eval_marker_representation \
+      --model_path MODEL_PATH \
+      --batch_size 64 \
+      --dataset interact 
+    ```
+    
+
+</details>
+
+
+
+​      
+
+​    
+
+
 
 ## Visualization
+
 To visualize the dataset, execute the following steps:
 
 1. Run the visualization script:
