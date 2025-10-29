@@ -43,6 +43,7 @@
 - [2025-09-12] Publish the paper on arXiv
 - [2025-10-06] Release the hoi correction pipeline
 - [2025-10-06] Release the evaluation pipeline for text-to-hoi
+- [2025-10-29] Release corrected OMOMO data.
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
@@ -50,7 +51,8 @@
 - [x] Publish the paper on arXiv
 - [x] Release the evaluation pipeline for the benchmark
 - [x] Release HOI correction pipeline
-- [ ] Release HOI correction data, augmentation data and pipeline
+- [x] Release HOI correction data
+- [ ] Release augmentation data and pipeline
 - [ ] Release the dataset with unified SMPL representation
 - [ ] Release retargeted HOI dataset with unified human shape
 - [ ] Release baseline constructions for HOI generative tasks
@@ -214,8 +216,6 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
     Download the dataset from this [link](https://github.com/lijiaman/omomo_release), and download the text annotations from this [link](https://github.com/lijiaman/omomo_release/blob/main/omomo_text_anno.zip).
 
-    
-
     Expected File Structure:
     ```bash
     data/omomo/raw
@@ -225,7 +225,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     ├── test_diffusion_manip_seq_joints24.p	   # Test sequences
     └── train_diffusion_manip_seq_joints24.p   # Train sequences
     ```
-
+    
   - **InterCap**
 
     Dowload InterCap from the [the project website](https://intercap.is.tue.mpg.de/). Please download the one with "new results via newly trained LEMO hand models"
@@ -364,6 +364,8 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 <details>
   <summary>Optional: HOI Correction</summary>
+
+  - To get the corrected OMOMO, please download through this [link](https://drive.google.com/file/d/1DODoyYDH7iPGZx2zONTXkw1fYNipbJ8L/view?usp=sharing), or process from scratch following the scripts below. 
 
   - Step1: Correct the full-body hoi by:
 
