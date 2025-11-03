@@ -369,12 +369,20 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
   - Step1: Correct the full-body hoi by:
 
-    ```
+    ```bash
     python ./hoi_correction/optimize_fullbody.py --dataset behave
     python ./hoi_correction/optimize_fullbody_intercap.py --dataset intercap
     ```
-    
-  - Step2: Correct the hand by:
+
+  - Step2: Correct the wrist by:
+
+    ```bash
+    python ./hoi_correction/scan_diff.py --dataset omomo
+    python ./hoi_correction/correct_wrist.py --dataset omomo
+    ```
+    The corrected sequences can be downloaded through this [link](https://drive.google.com/file/d/1HppMTRAHr24aIACYSeMCEFAf9Ou-LG5_/view?usp=sharing)
+
+  - Step3: Correct the hand by:
 
     ```bash
     python ./hoi_correction/optimize.py --dataset omomo
