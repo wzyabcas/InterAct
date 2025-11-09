@@ -261,6 +261,81 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
         └── subject_settings	  
     ```
 
+  - **ParaHome**
+
+    Download ParaHome from [the project website](https://github.com/snuvclab/ParaHome)
+
+    Expected File Structure:
+    ```bash
+    data/parahome/raw
+    ├── seq
+    │   ├── s1
+    │       ├── text_annotations.json
+    │       ├── object_transformations.pkl
+    │       ├── object_in_scene.json
+    │       ├── joint_states.pkl
+    │       ├── joint_positions.pkl
+    │       ├── head_tips.pkl
+    │       ├── hand_joint_orientations.pkl
+    │       ├── bone_vectors.pkl
+    │       ├── body_joint_orientations.pkl
+    │       └── body_global_transform.pkl
+        ...
+    ├── scan
+    │   ├── book
+    │       └── simplified
+    │          └── base.obj
+        ...
+    └── smplx_seq
+        ├── s1
+            ├── smplx_params.pkl
+            └── smplx_pose.pkl
+        ...
+    ```
+  - **ARCTIC**
+
+  Download body models, raw sequences, and meta files from [the project website](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md)
+
+  Download text annotations from [this project website](https://github.com/JunukCha/Text2HOI?tab=readme-ov-file)
+
+  Expected File Structure:
+  ```bash
+  data/arctic
+  ├── body_models
+  │   ├── mano
+  │   └── smplx
+  ├── description   
+  │   ├── s01
+  │       ├── box_grab_01
+  │           └── description.txt
+          ...
+      ...
+  └── raw
+      ├── meta
+      │   ├── object_vtemplates
+      │       ├── box
+      │           ├── bottom_keypoints_300.json
+      │           ├── bottom.obj
+                  ...
+      │           ├── mesh.obj
+                  ...
+      │           ├── parts.json
+      │           ├── top_keypoints_300.json
+      │           └── top.obj
+              ...
+      │   ├── subject_vtemplates
+      │       ├── s01.obj
+              ...
+      │       └── s10.obj
+          ...
+      └── raw_seqs
+          ├── s01
+              ├── box_grab_01.smplx.npy
+              ...
+          ...
+      
+  ```
+
 4. Data Processing
 
   After organizing the raw data, execute the following steps to process the datasets into our standard representations.
@@ -273,6 +348,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     python process/process_grab.py
     python process/process_intercap.py
     python process/process_omomo.py
+    python process/process_parahome.py
     ```
 
   - Canonicalize the object mesh:
@@ -320,16 +396,23 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │           ├── human.npz
     │           ├── object.npz
     │           └── text.txt
-    └── grab
-        ├── objects
-        │   └── object_name
-        │       └── object_name.obj
-        └── sequences
-            └── id
-                ├── human.npz
-                ├── object.npz
-                └── text.txt
-    
+    ├── grab
+    │   ├── objects
+    │   │   └── object_name
+    │   │       └── object_name.obj
+    │   └── sequences
+    │       └── id
+    │           ├── human.npz
+    │           ├── object.npz
+    │           └── text.txt
+    ├── parahome
+    │   ├── objects
+    │   │   └── object_name
+    │   │       └── base.obj
+    │   └── sequences
+    │       └── id
+    │           ├── human.npz
+    │           └── object_{object_name}_{part}.npz
     ```
     
 - Canonicalize the human data by running:
