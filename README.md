@@ -413,6 +413,15 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │       └── id
     │           ├── human.npz
     │           └── object_{object_name}_{part}.npz
+    ├── arctic
+        ├── objects
+        │   └── object_name
+        │       └── base.obj
+        └── sequences
+            └── id
+                ├── human.npz
+                └── object.npz
+
     ```
     
 - Canonicalize the human data by running:
