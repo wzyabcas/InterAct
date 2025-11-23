@@ -336,7 +336,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 4. Data Processing
 
-  After organizing the raw data, execute the following steps to process the datasets into our standard representations.
+    After organizing the raw data, execute the following steps to process the datasets into our standard representations.
 
   -  
     Run the processing scripts for each dataset:
@@ -651,6 +651,7 @@ Please also consider citing the specific sub-dataset you used from **InterAct** 
     booktitle = {CVPR},
     year      = {2025}
 }
+
 @inproceedings{fan2023arctic,
     title     = {{ARCTIC}: A Dataset for Dexterous Bimanual Hand-Object Manipulation},
     author    = {Fan, Zicong and Taheri, Omid and Tzionas, Dimitrios and Kocabas, Muhammed and Kaufmann, Manuel and Black, Michael J. and Hilliges, Otmar},
