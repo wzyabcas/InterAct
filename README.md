@@ -44,6 +44,7 @@
 - [2025-10-06] Release the hoi correction pipeline
 - [2025-10-06] Release the evaluation pipeline for text-to-hoi
 - [2025-10-29] Release corrected OMOMO data.
+- [2025-11-23] Integrated additional datasets, including ARCTIC and ParaHome.
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
@@ -294,47 +295,44 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     ```
   - **ARCTIC**
 
-  Download body models, raw sequences, and meta files from [the project website](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md)
-
-  Download text annotations from [this project website](https://github.com/JunukCha/Text2HOI?tab=readme-ov-file)
-
-  Expected File Structure:
-  ```bash
-  data/arctic
-  ├── body_models
-  │   ├── mano
-  │   └── smplx
-  ├── description   
-  │   ├── s01
-  │       ├── box_grab_01
-  │           └── description.txt
-          ...
-      ...
-  └── raw
-      ├── meta
-      │   ├── object_vtemplates
-      │       ├── box
-      │           ├── bottom_keypoints_300.json
-      │           ├── bottom.obj
-                  ...
-      │           ├── mesh.obj
-                  ...
-      │           ├── parts.json
-      │           ├── top_keypoints_300.json
-      │           └── top.obj
-              ...
-      │   ├── subject_vtemplates
-      │       ├── s01.obj
-              ...
-      │       └── s10.obj
-          ...
-      └── raw_seqs
-          ├── s01
-              ├── box_grab_01.smplx.npy
-              ...
-          ...
-      
-  ```
+    Download raw sequences, and meta files from [the project website](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md)
+  
+    Download text annotations from [this project website](https://github.com/JunukCha/Text2HOI?tab=readme-ov-file)
+  
+    Expected File Structure:
+    ```bash
+    data/arctic
+    ├── description   
+    │   ├── s01
+    │       ├── box_grab_01
+    │           └── description.txt
+            ...
+        ...
+    └── raw
+        ├── meta
+        │   ├── object_vtemplates
+        │       ├── box
+        │           ├── bottom_keypoints_300.json
+        │           ├── bottom.obj
+                    ...
+        │           ├── mesh.obj
+                    ...
+        │           ├── parts.json
+        │           ├── top_keypoints_300.json
+        │           └── top.obj
+                ...
+        │   ├── subject_vtemplates
+        │       ├── s01.obj
+                ...
+        │       └── s10.obj
+            ...
+        └── raw_seqs
+            ├── s01
+                ├── box_grab_01.smplx.npy
+                ...
+            ...
+        
+    ```
 
 4. Data Processing
 
@@ -349,6 +347,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     python process/process_intercap.py
     python process/process_omomo.py
     python process/process_parahome.py
+    python process/process_arctic.py
     ```
 
   - Canonicalize the object mesh:
@@ -644,6 +643,19 @@ Please also consider citing the specific sub-dataset you used from **InterAct** 
     title     = {{I'M HOI}: Inertia-aware Monocular Capture of 3D Human-Object Interactions},
     booktitle = {CVPR},
     year      = {2024},
+}
+
+@inproceedings{kim2025parahome,
+    title     = {Parahome: Parameterizing everyday home activities towards 3d generative modeling of human-object interactions},
+    author    = {Kim, Jeonghwan and Kim, Jisoo and Na, Jeonghyeon and Joo, Hanbyul},
+    booktitle = {CVPR},
+    year      = {2025}
+}
+@inproceedings{fan2023arctic,
+    title     = {{ARCTIC}: A Dataset for Dexterous Bimanual Hand-Object Manipulation},
+    author    = {Fan, Zicong and Taheri, Omid and Tzionas, Dimitrios and Kocabas, Muhammed and Kaufmann, Manuel and Black, Michael J. and Hilliges, Otmar},
+    booktitle = {CVPR},
+    year      = {2023}
 }
 
 ```
