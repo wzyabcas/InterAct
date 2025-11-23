@@ -23,11 +23,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 to_cpu = lambda tensor: tensor.detach().cpu()
 
 MODEL_PATH = './models'
-MANO_MODEL_DIR = "./data/arctic/body_models/mano"
 SMPLX_MODEL_P = {
-    "male": "./data/arctic/body_models/smplx/SMPLX_MALE.npz",
-    "female": "./data/arctic/body_models/smplx/SMPLX_FEMALE.npz",
-    "neutral": "./data/arctic/body_models/smplx/SMPLX_NEUTRAL.npz",
+    "male": "./models/smplx/SMPLX_MALE.npz",
+    "female": "./models/smplx/SMPLX_FEMALE.npz",
+    "neutral": "./models/smplx/SMPLX_NEUTRAL.npz",
 }
 
 # ============ Part 1: arctic_to_inter utilities ============
