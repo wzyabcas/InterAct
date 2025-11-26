@@ -17,7 +17,7 @@ body_model:
     model_type: "smpl"
     gender: "neutral"
     ext: 'pkl'
-    folder: "/work/hdd/bcnt/sirui/dongting/models"
+    folder: "../../models"
     use_compressed: False
     use_face_contour: True
     smpl:

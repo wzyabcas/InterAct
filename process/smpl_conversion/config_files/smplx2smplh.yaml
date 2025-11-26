@@ -19,7 +19,7 @@ body_model:
     gender: "female"
     # gender: "male"
     ext: 'pkl'
-    folder: "/work/hdd/bcnt/sirui/dongting/models"
+    folder: "../../models"
     use_compressed: False
     use_face_contour: True
     smplh:
