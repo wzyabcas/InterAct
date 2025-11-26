@@ -55,10 +55,12 @@
 - [x] Release the evaluation pipeline for the benchmark
 - [x] Release HOI correction pipeline
 - [x] Release HOI correction data
-- [ ] Release augmentation data and pipeline
+- [x] Release augmentation data 
+- [x] Release baseline constructions for Text to HOI. 
+- [ ] Release baseline constructions for the other HOI generative tasks
+- [ ] Release augmentation pipeline
 - [ ] Release the dataset with unified SMPL representation
 - [ ] Release retargeted HOI dataset with unified human shape
-- [ ] Release baseline constructions for HOI generative tasks
 
 
 ## General Description
@@ -525,7 +527,7 @@ To train on our benchmark, execute the following steps:
   - Train on the marker representation used in our paper by:
 
     ```
-      python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
+    python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
     ```
     </details>
 
@@ -538,10 +540,10 @@ To evaluate on our benchmark, execute the following steps
   - Evaluate on the marker representation used in our paper by:
 
     ```
-      python -m eval.eval_marker_representation \
-      --model_path MODEL_PATH \
-      --batch_size 64 \
-      --dataset interact 
+    python -m eval.eval_marker_representation \
+    --model_path MODEL_PATH \
+    --batch_size 64 \
+    --dataset interact 
     ```
     </details>
 
