@@ -1,7 +1,6 @@
 numpy==1.23.1
 torch==2.0.0
 dataclasses>=0.6
-pytorch3d
 matplotlib==3.4.3
 spacy==3.7.4
 PyYAML

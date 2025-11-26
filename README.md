@@ -45,6 +45,8 @@
 - [2025-10-06] Release the evaluation pipeline for text-to-hoi
 - [2025-10-29] Release corrected OMOMO data.
 - [2025-11-23] Integrated additional datasets, including ARCTIC and ParaHome.
+- [2025-11-26]  Release training code, pretrained model and evaluator checkpoints.
+- [2025-11-26]  Release augmentated data for InterAct-X. 
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
@@ -71,7 +73,7 @@ Please follow the steps below to download, process, and organize the data.
 
 ### 1. Request authorization
 
-Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct. Once authorized, you'll receive the download links. Organize the data from neuraldome, imhd, and chairs according to the following directory structure.
+Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from neuraldome, imhd, and chairs according to the following directory structure.
 
 ```
 data
@@ -155,25 +157,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 2. Prepare Environment
 
-  - Option A: From environment.yml
-
-    Create the Conda environment:
-    ```bash
-    conda env create -f environment.yml
-    ```
-
-    To install PyTorch3D, please follow the official instructions: [Pytorch3D](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
-    
-    Install remaining packages:
-    ```
-    pip install git+https://github.com/otaheri/chamfer_distance
-    pip install git+https://github.com/otaheri/bps_torch
-    python -m spacy download en_core_web_sm
-    ```
-
-  - Option B: Manual setup
-
-    Create and activate a fresh environment:
+  - Create and activate a fresh environment:
     ```bash
     conda create -n interact python=3.8
     conda activate interact
@@ -187,8 +171,12 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     pip install -r requirements.txt
     python -m spacy download en_core_web_sm
     ```
-
+  - Optional: Download pretrained model and evaluator models:
     
+    Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `assets/eval`.
+    
+    Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `save/`.
+
 
 3. Prepare raw data
 
@@ -420,7 +408,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
             └── id
                 ├── human.npz
                 └── object.npz
-
+    
     ```
     
 - Canonicalize the human data by running:
@@ -528,13 +516,24 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 To load and explore our data, please refer to the [demo notebook](data_demo.ipynb).
 
+## Training
+
+To train on our benchmark, execute the following steps:
+  <details>
+  <summary>1. Train on the Text to HOI task</summary>
+
+  - Train on the marker representation used in our paper by:
+
+    ```
+      python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
+    ```
+    </details>
+
 ## Evaluation
 
 To evaluate on our benchmark, execute the following steps
   <details>
   <summary>1. Evaluate on the Text to HOI task</summary>
-
-  - Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `assets/eval`.
 
   - Evaluate on the marker representation used in our paper by:
 
@@ -544,7 +543,7 @@ To evaluate on our benchmark, execute the following steps
       --batch_size 64 \
       --dataset interact 
     ```
-</details>
+    </details>
 
 
 ## Visualization

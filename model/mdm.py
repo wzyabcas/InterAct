@@ -80,12 +80,31 @@ class MDM(nn.Module):
         self.embed_timestep = TimestepEmbedder(self.latent_dim, self.sequence_pos_encoder)
 
         if self.cond_mode != 'no_cond':
+            ## TMA text encoder
             if 'text' in self.cond_mode:
-                self.embed_text = nn.Linear(self.clip_dim, self.latent_dim)
+                self.embed_text = nn.Linear(256, self.latent_dim)
                 print('EMBED TEXT')
-                print('Loading CLIP...')
-                self.clip_version = clip_version
-                self.clip_model = self.load_and_freeze_clip(clip_version)
+                print('Loading TMA...')
+                # self.clip_version = clip_version
+                # self.clip_model = self.load_and_freeze_clip(clip_version)
+                path="./assets/eval/markersbps.ckpt" # './OpenTMA/checkpoints/epoch=1499.ckpt'
+                
+                A=torch.load(path)
+                STAT_DICT=A['state_dict']
+                filtered_dict = {k[12:]: v for k, v in STAT_DICT.items() if k.startswith("textencoder")}
+                A['state_dict']=filtered_dict
+                modelpath = 'distilbert-base-uncased'
+
+                self.textencoder = DistilbertActorAgnosticEncoder(modelpath, latent_dim=256, 
+                    ff_size=1024,num_layers=4,num_head=6)
+                self.textencoder.load_state_dict(filtered_dict)
+                self.freeze_block(self.textencoder)
+            # if 'text' in self.cond_mode:
+            #     self.embed_text = nn.Linear(self.clip_dim, self.latent_dim)
+            #     print('EMBED TEXT')
+            #     print('Loading CLIP...')
+            #     self.clip_version = clip_version
+            #     self.clip_model = self.load_and_freeze_clip(clip_version)
             
 
             if 'action' in self.cond_mode:
