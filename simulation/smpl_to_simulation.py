@@ -26,7 +26,7 @@ import torch.nn.functional as F
 import argparse
 from copy import copy
 
-MODEL_PATH = "models"
+MODEL_PATH = "../models"
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -435,12 +435,11 @@ def forward_smpl(poses, betas, trans, gender, model_type, num_betas, use_pca=Fal
 
 def main(args):
     dataset_name = args.dataset_name
-    MOTION_PATH = f"data/{dataset_name}/sequences_canonical"
-    OBJECT_PATH = f"data/{dataset_name}/objects"
+    MOTION_PATH = f"../data/{dataset_name}/sequences_canonical"
+    OBJECT_PATH = f"../data/{dataset_name}/objects"
     data_name = sorted(os.listdir(MOTION_PATH))
-    os.makedirs(f"../InterAct/{dataset_name.lower()}", exist_ok=True)
-    # TODO: store in InterAct
-    target_objects_dir = os.path.join("../InterAct", dataset_name.lower(), "objects")
+    os.makedirs(f"InterAct/{dataset_name.lower()}", exist_ok=True)
+    target_objects_dir = os.path.join("InterAct", dataset_name.lower(), "objects")
     if not os.path.exists(target_objects_dir):
         os.makedirs(target_objects_dir, exist_ok=True)
 
