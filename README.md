@@ -1,18 +1,18 @@
 <p align="center">
 <h1><strong>InterAct: Advancing Large-Scale Versatile 3D Human-Object Interaction Generation</strong></h1>
   <p align="center">
-    <a href='https://sirui-xu.github.io' target='_blank'>Sirui Xu</a><sup>*</sup>&emsp;
-    <a href='' target='_blank'>Dongting Li</a><sup>*</sup>&emsp;
-    <a href='' target='_blank'>Yucheng Zhang</a><sup>*</sup>&emsp;
-    <a href='' target='_blank'>Xiyan Xu</a><sup>*</sup>&emsp;
-    <a href='' target='_blank'>Qi Long</a><sup>*</sup>&emsp;
-    <a href='https://github.com/wzyabcas' target='_blank'>Ziyin Wang</a><sup>*</sup>&emsp;
-    <a href='' target='_blank'>Yunzhi Lu</a>&emsp;
-    <a href='' target='_blank'>Shuchang Dong</a>&emsp;
-    <a href='' target='_blank'>Hezi Jiang</a>&emsp;
-    <a href='' target='_blank'>Akshat Gupta</a>&emsp;
-    <a href='https://yxw.web.illinois.edu/' target='_blank'>Yu-Xiong Wang</a>&emsp;
-    <a href='https://lgui.web.illinois.edu/' target='_blank'>Liang-Yan Gui</a>&emsp;
+    <a href='https://sirui-xu.github.io' target='_blank'>Sirui Xu</a><sup>*</sup> 
+    <a href='' target='_blank'>Dongting Li</a><sup>*</sup> 
+    <a href='' target='_blank'>Yucheng Zhang</a><sup>*</sup> 
+    <a href='' target='_blank'>Xiyan Xu</a><sup>*</sup> 
+    <a href='' target='_blank'>Qi Long</a><sup>*</sup> 
+    <a href='https://github.com/wzyabcas' target='_blank'>Ziyin Wang</a><sup>*</sup> 
+    <a href='' target='_blank'>Yunzhi Lu</a> 
+    <a href='' target='_blank'>Shuchang Dong</a> 
+    <a href='' target='_blank'>Hezi Jiang</a> 
+    <a href='' target='_blank'>Akshat Gupta</a> 
+    <a href='https://yxw.web.illinois.edu/' target='_blank'>Yu-Xiong Wang</a> 
+    <a href='https://lgui.web.illinois.edu/' target='_blank'>Liang-Yan Gui</a> 
     <br>
     University of Illinois Urbana Champaign
     <br>
@@ -34,10 +34,10 @@
     <img src='https://img.shields.io/badge/GitHub-Code-black?style=flat&logo=github&logoColor=white'></a>
 </p>
 
-
 ![](./assets/teaser.png)
 
 ## News
+
 - [2025-04-20] Initial release of the InterAct dataset
 - [2025-07-08] Release the proessing code for unified SMPL-H representation
 - [2025-09-12] Publish the paper on arXiv
@@ -116,9 +116,7 @@ data
 └── annotations
 ```
 
-
-
-### 2. Process from scratch  
+### 2. Process from scratch
 
 The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the text labels annotated by our team. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
 
@@ -126,37 +124,34 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 - **BEHAVE:** [License](https://virtualhumans.mpi-inf.mpg.de/behave/license.html)
 - **INTERCAP:** [License](https://intercap.is.tue.mpg.de/license.html)
 
-
 <details>
   <summary>Please follow these steps to get started:</summary>
 
-
 1. Download SMPL+H, SMPLX, DMPLs.
 
-    Download SMPL+H mode from [SMPL+H](https://mano.is.tue.mpg.de/download.php) (choose Extended SMPL+H model used in the AMASS project), DMPL model from [DMPL](https://smpl.is.tue.mpg.de/download.php) (choose DMPLs compatible with SMPL), and SMPL-X model from [SMPL-X](https://smpl-x.is.tue.mpg.de/download.php). Then, please place all the models under `./models/`. The `./models/` folder tree should be:
+   Download SMPL+H mode from [SMPL+H](https://mano.is.tue.mpg.de/download.php) (choose Extended SMPL+H model used in the AMASS project), DMPL model from [DMPL](https://smpl.is.tue.mpg.de/download.php) (choose DMPLs compatible with SMPL), and SMPL-X model from [SMPL-X](https://smpl-x.is.tue.mpg.de/download.php). Then, please place all the models under `./models/`. The `./models/` folder tree should be:
 
-    ```
-    models
-    │── smplh
-    │   ├── female
-    │   │   ├── model.npz
-    │   ├── male
-    │   │   ├── model.npz
-    │   ├── neutral
-    │   │   ├── model.npz
-    │   ├── SMPLH_FEMALE.pkl
-    │   └── SMPLH_MALE.pkl
-    └── smplx
-        ├── SMPLX_FEMALE.npz
-        ├── SMPLX_FEMALE.pkl
-        ├── SMPLX_MALE.npz
-        ├── SMPLX_MALE.pkl
-        ├── SMPLX_NEUTRAL.npz
-        └── SMPLX_NEUTRAL.pkl
-    ```
+   ```
+   models
+   │── smplh
+   │   ├── female
+   │   │   ├── model.npz
+   │   ├── male
+   │   │   ├── model.npz
+   │   ├── neutral
+   │   │   ├── model.npz
+   │   ├── SMPLH_FEMALE.pkl
+   │   └── SMPLH_MALE.pkl
+   └── smplx
+       ├── SMPLX_FEMALE.npz
+       ├── SMPLX_FEMALE.pkl
+       ├── SMPLX_MALE.npz
+       ├── SMPLX_MALE.pkl
+       ├── SMPLX_NEUTRAL.npz
+       └── SMPLX_NEUTRAL.pkl
+   ```
 
-    Please follow [smplx tools](https://github.com/vchoutas/smplx/blob/main/tools/README.md#merging-smpl-h-and-mano-parameters) to merge SMPL-H and MANO parameters.
-
+   Please follow [smplx tools](https://github.com/vchoutas/smplx/blob/main/tools/README.md#merging-smpl-h-and-mano-parameters) to merge SMPL-H and MANO parameters.
 2. Prepare Environment
 
   - Create and activate a fresh environment:
@@ -166,7 +161,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     pip install torch==2.0.0 torchvision==0.15.1 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
     ```
 
-    To install PyTorch3D, please follow the official instructions: [Pytorch3D](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md).
+  To install PyTorch3D, please follow the official instructions: [Pytorch3D](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md).
 
     Install remaining packages:
     ```
@@ -182,108 +177,107 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 3. Prepare raw data
 
-  - **BEHAVE** 
+- **BEHAVE**
 
-    Download the motion data from [this link](https://datasets.d2.mpi-inf.mpg.de/cvpr22behave/behave-30fps-params-v1.tar), and put them into [./data/behave/sequences](data/behave/sequences/). Download object data from [this link](https://datasets.d2.mpi-inf.mpg.de/cvpr22behave/objects.zip), and put them into [./data/behave/objects](data/behave/objects/). 
+  Download the motion data from [this link](https://datasets.d2.mpi-inf.mpg.de/cvpr22behave/behave-30fps-params-v1.tar), and put them into [./data/behave/sequences](data/behave/sequences/). Download object data from [this link](https://datasets.d2.mpi-inf.mpg.de/cvpr22behave/objects.zip), and put them into [./data/behave/objects](data/behave/objects/).
 
-    Expected File Structure:
+  Expected File Structure:
 
-    ```bash
-    data/behave/
-    ├── sequences
-    │   ├── data_name
-    │       ├── object_fit_all.npz        # object's pose sequences
-    │       └── smpl_fit_all.npz          # human's pose sequences
-    └── objects
-        └── object_name
-            ├── object_name.jpg       # one photo of the object
-            ├── object_name.obj       # reconstructed 3D scan of the object
-            ├── object_name.obj.mtl   # mesh material property
-            ├── object_name_tex.jpg   # mesh texture
-            └── object_name_fxxx.ply  # simplified object mesh 
-    ```
+  ```bash
+  data/behave/
+  ├── sequences
+  │   ├── data_name
+  │       ├── object_fit_all.npz        # object's pose sequences
+  │       └── smpl_fit_all.npz          # human's pose sequences
+  └── objects
+      └── object_name
+          ├── object_name.jpg       # one photo of the object
+          ├── object_name.obj       # reconstructed 3D scan of the object
+          ├── object_name.obj.mtl   # mesh material property
+          ├── object_name_tex.jpg   # mesh texture
+          └── object_name_fxxx.ply  # simplified object mesh 
+  ```
+- **OMOMO**
 
-  - **OMOMO**
+  Download the dataset from this [link](https://github.com/lijiaman/omomo_release), and download the text annotations from this [link](https://github.com/lijiaman/omomo_release/blob/main/omomo_text_anno.zip).
 
-    Download the dataset from this [link](https://github.com/lijiaman/omomo_release), and download the text annotations from this [link](https://github.com/lijiaman/omomo_release/blob/main/omomo_text_anno.zip).
+  Expected File Structure:
 
-    Expected File Structure:
-    ```bash
-    data/omomo/raw
-    ├── omomo_text_anno_json_data              # Annotation JSON data
-    ├── captured_objects 
-    │   └── object_name_cleaned_simplified.obj # Simplified object mesh
-    ├── test_diffusion_manip_seq_joints24.p	   # Test sequences
-    └── train_diffusion_manip_seq_joints24.p   # Train sequences
-    ```
-    
-  - **InterCap**
+  ```bash
+  data/omomo/raw
+  ├── omomo_text_anno_json_data              # Annotation JSON data
+  ├── captured_objects 
+  │   └── object_name_cleaned_simplified.obj # Simplified object mesh
+  ├── test_diffusion_manip_seq_joints24.p	   # Test sequences
+  └── train_diffusion_manip_seq_joints24.p   # Train sequences
+  ```
+- **InterCap**
 
-    Dowload InterCap from the [the project website](https://intercap.is.tue.mpg.de/). Please download the one with "new results via newly trained LEMO hand models"
+  Dowload InterCap from the [the project website](https://intercap.is.tue.mpg.de/). Please download the one with "new results via newly trained LEMO hand models"
 
-    Expected File Structure:
+  Expected File Structure:
 
-    ```bash
-    data/intercap/raw
-    └── 01
-        └── 01
-            └── Seg_id
-                ├── res.pkl					   # Human and Object Motion 				
-                └── Mesh
-                    └── 00000_second_obj.ply   # Object mesh 
+  ```bash
+  data/intercap/raw
+  └── 01
+      └── 01
+          └── Seg_id
+              ├── res.pkl					   # Human and Object Motion 
+              └── Mesh
+                  └── 00000_second_obj.ply   # Object mesh 
+    ...
+  ```
+- **GRAB**
+
+  Download GRAB from [the project website](https://grab.is.tue.mpg.de/).
+
+  Expected File Structure:
+
+  ```bash
+  data/grab/raw
+  ├── grab
+  │   ├── s1
+  │       └── seq_name.npz      # Human and Object Motion 
       ...
-    ```
+  └── tools
+      ├── object_meshes         # Object mesh
+      ├── object_settings   
+      ├── subject_meshes        # Subject mesh
+      └── subject_settings	  
+  ```
+- **ParaHome**
 
-  - **GRAB**
+  Download ParaHome from [the project website](https://github.com/snuvclab/ParaHome)
 
-    Download GRAB from [the project website](https://grab.is.tue.mpg.de/). 
+  Expected File Structure:
 
-    Expected File Structure:
-    ```bash
-    data/grab/raw
-    ├── grab
-    │   ├── s1
-    │       └── seq_name.npz      # Human and Object Motion 
-        ...
-    └── tools
-        ├── object_meshes         # Object mesh
-        ├── object_settings       
-        ├── subject_meshes        # Subject mesh
-        └── subject_settings	  
-    ```
-
-  - **ParaHome**
-
-    Download ParaHome from [the project website](https://github.com/snuvclab/ParaHome)
-
-    Expected File Structure:
-    ```bash
-    data/parahome/raw
-    ├── seq
-    │   ├── s1
-    │       ├── text_annotations.json
-    │       ├── object_transformations.pkl
-    │       ├── object_in_scene.json
-    │       ├── joint_states.pkl
-    │       ├── joint_positions.pkl
-    │       ├── head_tips.pkl
-    │       ├── hand_joint_orientations.pkl
-    │       ├── bone_vectors.pkl
-    │       ├── body_joint_orientations.pkl
-    │       └── body_global_transform.pkl
-        ...
-    ├── scan
-    │   ├── book
-    │       └── simplified
-    │          └── base.obj
-        ...
-    └── smplx_seq
-        ├── s1
-            ├── smplx_params.pkl
-            └── smplx_pose.pkl
-        ...
-    ```
-  - **ARCTIC**
+  ```bash
+  data/parahome/raw
+  ├── seq
+  │   ├── s1
+  │       ├── text_annotations.json
+  │       ├── object_transformations.pkl
+  │       ├── object_in_scene.json
+  │       ├── joint_states.pkl
+  │       ├── joint_positions.pkl
+  │       ├── head_tips.pkl
+  │       ├── hand_joint_orientations.pkl
+  │       ├── bone_vectors.pkl
+  │       ├── body_joint_orientations.pkl
+  │       └── body_global_transform.pkl
+      ...
+  ├── scan
+  │   ├── book
+  │       └── simplified
+  │          └── base.obj
+      ...
+  └── smplx_seq
+      ├── s1
+          ├── smplx_params.pkl
+          └── smplx_pose.pkl
+      ...
+  ```
+- **ARCTIC**
 
     Download raw sequences, and meta files from [the project website](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md)
   
@@ -328,8 +322,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
     After organizing the raw data, execute the following steps to process the datasets into our standard representations.
 
-  -  
-    Run the processing scripts for each dataset:
+- Run the processing scripts for each dataset:
 
     ```bash
     python process/process_behave.py
@@ -417,104 +410,94 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
   ```bash
   python process/canonicalize_human.py
-  
+
   # or multi_thread for speedup
   python process/canonicalize_human_multi_thread.py
   ```
-
 - Sample object keypoints:
 
   ```bash
   python process/sample_obj.py
   ```
-
 - Extract motion representations:
 
   ```bash
   python process/motion_representation.py  
   ```
-
 - Process the object bps for training:
 
   ```bash
   python process/process_bps.py
   ```
 
-</details> 
-
+</details>
 
 <details>
   <summary>Optional: HOI Correction</summary>
 
-  - To get the corrected OMOMO, please download through this [link](https://drive.google.com/file/d/1DODoyYDH7iPGZx2zONTXkw1fYNipbJ8L/view?usp=sharing), or process from scratch following the scripts below. 
+- To get the corrected OMOMO, please download through this [link](https://drive.google.com/file/d/1DODoyYDH7iPGZx2zONTXkw1fYNipbJ8L/view?usp=sharing), or process from scratch following the scripts below.
+- Step1: Correct the full-body hoi by:
 
-  - Step1: Correct the full-body hoi by:
+  ```bash
+  python ./hoi_correction/optimize_fullbody.py --dataset behave
+  python ./hoi_correction/optimize_fullbody_intercap.py --dataset intercap
+  ```
+- Step2: Correct the wrist by:
 
-    ```bash
-    python ./hoi_correction/optimize_fullbody.py --dataset behave
-    python ./hoi_correction/optimize_fullbody_intercap.py --dataset intercap
-    ```
+  ```bash
+  python ./hoi_correction/scan_diff.py --dataset omomo
+  python ./hoi_correction/correct_wrist.py --dataset omomo
+  ```
 
-  - Step2: Correct the wrist by:
+  The corrected sequences can be downloaded through this [link](https://drive.google.com/file/d/1HppMTRAHr24aIACYSeMCEFAf9Ou-LG5_/view?usp=sharing)
+- Step3: Correct the hand by:
 
-    ```bash
-    python ./hoi_correction/scan_diff.py --dataset omomo
-    python ./hoi_correction/correct_wrist.py --dataset omomo
-    ```
-    The corrected sequences can be downloaded through this [link](https://drive.google.com/file/d/1HppMTRAHr24aIACYSeMCEFAf9Ou-LG5_/view?usp=sharing)
-
-  - Step3: Correct the hand by:
-
-    ```bash
-    python ./hoi_correction/optimize.py --dataset omomo
-    python ./hoi_correction/optimize_hand_behave.py --dataset behave
-    ```
-
+  ```bash
+  python ./hoi_correction/optimize.py --dataset omomo
+  python ./hoi_correction/optimize_hand_behave.py --dataset behave
+  ```
 
 </details>
-
-
 
 <details>
   <summary>Optional: Unify the motion to SMPL-H</summary>
 
-  - Data
+- Data
 
-    Register on the [SMPL-X website](http://smpl-x.is.tue.mpg.de/), go to the
-    downloads section to get the correspondences and sample data,
-    by clicking on the *Model correspondences* button.
-    Create a folder
-    named `transfer_data` and extract the downloaded zip there. You should have the
-    following folder structure now:
+  Register on the [SMPL-X website](http://smpl-x.is.tue.mpg.de/), go to the
+  downloads section to get the correspondences and sample data,
+  by clicking on the *Model correspondences* button.
+  Create a folder
+  named `transfer_data` and extract the downloaded zip there. You should have the
+  following folder structure now:
 
-    ```bash
-    process/smpl_conversion/transfer_data
-    ├── meshes
-    │   ├── smpl
-    │   ├── smplx
-    ├── smpl2smplh_def_transfer.pkl
-    ├── smpl2smplx_deftrafo_setup.pkl
-    ├── smplh2smpl_def_transfer.pkl
-    ├── smplh2smplx_deftrafo_setup.pkl
-    ├── smplx2smpl_deftrafo_setup.pkl
-    ├── smplx2smplh_deftrafo_setup.pkl
-    ├── smplx_mask_ids.npy
-    ```
+  ```bash
+  process/smpl_conversion/transfer_data
+  ├── meshes
+  │   ├── smpl
+  │   ├── smplx
+  ├── smpl2smplh_def_transfer.pkl
+  ├── smpl2smplx_deftrafo_setup.pkl
+  ├── smplh2smpl_def_transfer.pkl
+  ├── smplh2smplx_deftrafo_setup.pkl
+  ├── smplx2smpl_deftrafo_setup.pkl
+  ├── smplx2smplh_deftrafo_setup.pkl
+  ├── smplx_mask_ids.npy
+  ```
+- Unify the SMPL representation by:
 
-  - Unify the SMPL representation by:
+  ```bash
+  cd ./process/smpl_conversion
+  python -m transfer_model --exp-cfg config_files/smplx2smplh.yaml --dataset grab
+  ```
 
-    ```bash
-    cd ./process/smpl_conversion
-    python -m transfer_model --exp-cfg config_files/smplx2smplh.yaml --dataset grab
-    ```
+  `--dataset`: dataset in [grab, omomo, chairs, intercap]
 
-    `--dataset`: dataset in [grab, omomo, chairs, intercap]
-    
-    We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , sepcial thanks to them!
+  We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , sepcial thanks to them!
 
 </details>
 
-## Data Loading 
+## Data Loading
 
 To load and explore our data, please refer to the [demo notebook](data_demo.ipynb).
 
@@ -534,7 +517,8 @@ To train on our benchmark, execute the following steps:
 ## Evaluation
 
 To evaluate on our benchmark, execute the following steps
-  <details>
+
+<details>
   <summary>1. Evaluate on the Text to HOI task</summary>
 
   - Evaluate on the marker representation used in our paper by:
@@ -554,21 +538,18 @@ To visualize the dataset, execute the following steps:
 
 1. Run the visualization script:
 
-    ```bash
-    python visualization/visualize.py [dataset_name]
-    ```
+   ```bash
+   python visualization/visualize.py [dataset_name]
+   ```
 
-    Replace [dataset_name] with one of the following: behave, neuraldome, intercap, omomo, grab, imhd, chairs.
-
+   Replace [dataset_name] with one of the following: behave, neuraldome, intercap, omomo, grab, imhd, chairs.
 2. To visualize markers, run:
 
-    ```bash
-    python visualization/visualize_markers.py
-    ```
+   ```bash
+   python visualization/visualize_markers.py
+   ```
 
-
-
-## Citation  
+## Citation
 
 If you find this repository useful for your work, please cite:
 
@@ -582,6 +563,7 @@ If you find this repository useful for your work, please cite:
 ```
 
 Please also consider citing the specific sub-dataset you used from **InterAct** as follows:
+
 ```bibtex
 @inproceedings{taheri2020grab,
     title     = {{GRAB}: A Dataset of Whole-Body Human Grasping of Objects},
