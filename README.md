@@ -45,8 +45,9 @@
 - [2025-10-06] Release the evaluation pipeline for text-to-hoi
 - [2025-10-29] Release corrected OMOMO data.
 - [2025-11-23] Integrated additional datasets, including ARCTIC and ParaHome.
-- [2025-11-26]  Release training code, pretrained model and evaluator checkpoints.
-- [2025-11-26]  Release augmentated data for InterAct-X. 
+- [2025-11-26] Release training code, pretrained model and evaluator checkpoints.
+- [2025-11-26] Release augmentated data for InterAct-X. 
+- [2025-12-07] 🚀 Release the data conversion pipeline for bringing InterAct into simulation, specifically for [InterMimic](https://github.com/Sirui-Xu/InterMimic) use.
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
@@ -56,9 +57,9 @@
 - [x] Release HOI correction pipeline
 - [x] Release HOI correction data
 - [x] Release augmentation data 
-- [x] Release baseline constructions for Text to HOI. 
+- [x] Release baseline constructions for text2HOI. 
+- [x] Release the pipeline for constructing simulation ready data 
 - [ ] Release baseline constructions for the other HOI generative tasks
-- [ ] Release augmentation pipeline
 - [ ] Release the dataset with unified SMPL representation
 - [ ] Release retargeted HOI dataset with unified human shape
 
@@ -67,7 +68,7 @@
 
 We introduce InterAct, a comprehensive large-scale 3D human-object interaction (HOI) dataset, originally comprising 21.81 hours of HOI data consolidated from diverse sources, the dataset is meticulously refined by correcting contact artifacts and augmented with varied motion patterns to extend the total duration to approximately 30 hours. It includes 34.1K sequence-level detailed text descriptions.
 
-## Dataset Download
+## Dataset Preparation
 
 The InterAct dataset is consolidated according to the licenses of its original data sources. For data approved for redistribution, direct download links are provided; for others, we supply processing code to convert the raw data into our standardized format.
 
@@ -76,6 +77,9 @@ Please follow the steps below to download, process, and organize the data.
 ### 1. Request authorization
 
 Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from neuraldome, imhd, and chairs according to the following directory structure.
+
+<details>
+  <summary>Data structure</summary>
 
 ```
 data
@@ -115,20 +119,22 @@ data
 │── chairs
 └── annotations
 ```
-
+</details>
 
 
 ### 2. Process from scratch  
 
 The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the text labels annotated by our team. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
 
+<details>
+  <summary>Licenses</summary>
 - **GRAB:** [License](https://grab.is.tuebingen.mpg.de/license.html)
 - **BEHAVE:** [License](https://virtualhumans.mpi-inf.mpg.de/behave/license.html)
 - **INTERCAP:** [License](https://intercap.is.tue.mpg.de/license.html)
-
+</details>
 
 <details>
-  <summary>Please follow these steps to get started:</summary>
+  <summary>Please follow these steps to get started</summary>
 
 
 1. Download SMPL+H, SMPLX, DMPLs.
@@ -518,11 +524,35 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
 To load and explore our data, please refer to the [demo notebook](data_demo.ipynb).
 
+## 🔥 Data for Simulation
+
+This pipeline depends on the requirements listed in the [InterMimic project](https://github.com/Sirui-Xu/InterMimic?tab=readme-ov-file#dependencies). Please make sure all dependencies are installed before running the script.
+
+To process the data, simply run:
+
+```bash
+cd simulation
+python smpl_to_simulation.py --dataset_name [dataset]
+```
+
+After processing, the generated files will be organized as follows:
+
+* **Motion files** (`.pt`) are stored in
+  `InterAct/{dataset}`
+
+* **SMPL humanoid files** (`.xml`) are stored in
+  `InterAct/{dataset}/{model_type}`
+
+* **Object files** (`.urdf`) are stored in
+  `InterAct/{dataset}/objects`
+
+For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic).
+
 ## Training
 
 To train on our benchmark, execute the following steps:
   <details>
-  <summary>1. Train on the Text to HOI task</summary>
+  <summary>Train on the text to HOI task</summary>
 
   - Train on the marker representation used in our paper by:
 
@@ -535,7 +565,7 @@ To train on our benchmark, execute the following steps:
 
 To evaluate on our benchmark, execute the following steps
   <details>
-  <summary>1. Evaluate on the Text to HOI task</summary>
+  <summary>Evaluate on the text to HOI task</summary>
 
   - Evaluate on the marker representation used in our paper by:
 
