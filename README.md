@@ -528,7 +528,7 @@ To load and explore our data, please refer to the [demo notebook](data_demo.ipyn
 
 This pipeline depends on the requirements listed in the [InterMimic project](https://github.com/Sirui-Xu/InterMimic?tab=readme-ov-file#dependencies). Please make sure all dependencies are installed before running the script.
 
-To process the data, simply run:
+After completing the *data preparation* steps above, run the following to generate the simulation assets:
 
 ```bash
 cd simulation
