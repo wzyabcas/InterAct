@@ -1,0 +1,15 @@
+chairblack
+chairwood
+chair
+woodchair
+whitechair
+table
+talltable
+cylinderlarge
+pyramidlarge
+spherelarge
+toruslarge
+desk
+15
+17
+24

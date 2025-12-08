@@ -57,7 +57,7 @@ def get_opt(opt_path, device, use_global=False, wo_obj_motion=False):
     opt.wo_obj_motion = wo_obj_motion
 
     if opt.dataset_name == 't2m_behave':
-        opt.data_root =  './data'#'../data'
+        opt.data_root =  './data' #'./data'
         opt.dim_pose = 553 + 6
         opt.markers_num = 77
         opt.max_motion_length = 300

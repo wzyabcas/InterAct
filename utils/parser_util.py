@@ -80,7 +80,7 @@ def add_diffusion_options(parser):
 
 def add_model_options(parser):
     group = parser.add_argument_group('model')
-    group.add_argument("--arch", default='hybrid',
+    group.add_argument("--arch", default='trans_enc',
                        choices=['trans_enc', 'trans_dec', 'gru', 'hybrid'], type=str,
                        help="Architecture types as reported in the paper.")
     group.add_argument("--emb_trans_dec", default=False, type=bool,

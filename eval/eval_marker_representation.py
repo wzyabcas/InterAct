@@ -19,8 +19,8 @@ from bps_torch.bps import bps_torch
 
 from tma.models.architectures.temos.textencoder.distillbert_actor import DistilbertActorAgnosticEncoder
 from tma.models.architectures.temos.motionencoder.actor import ActorAgnosticEncoder
-from eval_t2m_utils import *
-from utils.common.quaternion import rotation_6d_to_matrix
+from utils.eval_t2m_utils import *
+from common.quaternion import rotation_6d_to_matrix
 # from sentence_transformers import SentenceTransformer
 
 def load_motion_dataset(args, max_frames, n_frames, training_stage=3): 

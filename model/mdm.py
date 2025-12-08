@@ -146,6 +146,14 @@ class MDM(nn.Module):
             return cond * (1. - mask)
         else:
             return cond
+    def encode_text(self, raw_text):
+        # raw_text - list (batch_size length) of strings with input text prompts
+        
+        device = next(self.parameters()).device
+        # texts = clip.tokenize(raw_text, truncate=True).to(device) # [bs, context_length] # if n_tokens > 77 -> will truncate
+        # return self.clip_model.encode_text(texts).float()
+        
+        return self.textencoder(raw_text).loc
 
     # def mask_cond2(self, cond, force_mask=False):
     #     bs, t, d = cond.shape
@@ -158,11 +166,11 @@ class MDM(nn.Module):
     #     else:
     #         return cond.reshape(bs, t, d)
 
-    def encode_text(self, raw_text):
-        # raw_text - list (batch_size length) of strings with input text prompts
-        device = next(self.parameters()).device
-        texts = clip.tokenize(raw_text, truncate=True).to(device) # [bs, context_length] # if n_tokens > 77 -> will truncate
-        return self.clip_model.encode_text(texts).float()
+    # def encode_text(self, raw_text):
+    #     # raw_text - list (batch_size length) of strings with input text prompts
+    #     device = next(self.parameters()).device
+    #     texts = clip.tokenize(raw_text, truncate=True).to(device) # [bs, context_length] # if n_tokens > 77 -> will truncate
+    #     return self.clip_model.encode_text(texts).float()
 
 
     def forward(self, x, timesteps, y=None):
