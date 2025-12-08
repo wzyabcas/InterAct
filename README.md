@@ -567,10 +567,18 @@ To evaluate on our benchmark, execute the following steps
   <details>
   <summary>Evaluate on the text to HOI task</summary>
 
-  - Evaluate on the marker representation used in our paper by:
+  - Evaluate on the marker representation:
 
     ```
     python -m eval.eval_marker_representation \
+    --model_path MODEL_PATH \
+    --batch_size 64 \
+    --dataset interact 
+    ```
+  - Evaluate on the marker representation with contact guidance used in our paper by:
+
+    ```
+    python -m eval.eval_marker_representation_guide \
     --model_path MODEL_PATH \
     --batch_size 64 \
     --dataset interact 
