@@ -543,6 +543,19 @@ After processing, the generated files will be organized as follows:
 For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic).
 
 ## Text2Interaction
+
+
+<details>
+   <summary>Prepare</summary>
+
+  Download pretrained model and evaluator models:
+
+  -  Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
+
+  -  Optional: Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `./text2interaction/save/`.
+  
+  </details>
+
 <details>
    <summary>Training</summary>
 
@@ -557,12 +570,6 @@ For details on data loading, replaying, and training with the processed data, pl
 
   <details>
   <summary>Evaluation</summary>
-
-  - Optional: Download pretrained model and evaluator models:
-    
-    Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
-    
-    Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `./text2interaction/save/`.
 
   To evaluate on our benchmark, execute the following steps
 

@@ -664,7 +664,7 @@ class Behave(data.Dataset):
         opt.model_dir = pjoin(abs_base_path, opt.model_dir)
         opt.checkpoints_dir = pjoin(abs_base_path, opt.checkpoints_dir)
         opt.save_root = pjoin(abs_base_path, opt.save_root)
-        opt.meta_dir = './data'
+        opt.meta_dir = '../data'
         if dataset == 'interact':
             self.datasets = [ 'neuraldome', 'chairs', 'omomo', 'imhd', 'grab','behave','intercap']
         elif dataset == 'interact_wobehave':
