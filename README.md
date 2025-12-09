@@ -179,12 +179,6 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     pip install -r requirements.txt
     python -m spacy download en_core_web_sm
     ```
-  - Optional: Download pretrained model and evaluator models:
-    
-    Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `assets/eval`.
-    
-    Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `save/`.
-
 
 3. Prepare raw data
 
@@ -548,24 +542,29 @@ After processing, the generated files will be organized as follows:
 
 For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic).
 
-## Training
+## Text2Interaction
+<details>
+   <summary>Training</summary>
 
-To train on our benchmark, execute the following steps:
+  To train on our benchmark, execute the following steps:
+
+  ```
+  cd text2interaction
+  python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
+  ```
+  
+  </details>
+
   <details>
-  <summary>Train on the text to HOI task</summary>
+  <summary>Evaluation</summary>
 
-  - Train on the marker representation used in our paper by:
+  - Optional: Download pretrained model and evaluator models:
+    
+    Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
+    
+    Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `./text2interaction/save/`.
 
-    ```
-    python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
-    ```
-    </details>
-
-## Evaluation
-
-To evaluate on our benchmark, execute the following steps
-  <details>
-  <summary>Evaluate on the text to HOI task</summary>
+  To evaluate on our benchmark, execute the following steps
 
   - Evaluate on the marker representation:
 
@@ -575,7 +574,7 @@ To evaluate on our benchmark, execute the following steps
     --batch_size 64 \
     --dataset interact 
     ```
-  - Evaluate on the marker representation with contact guidance used in our paper by:
+  - Evaluate on the marker representation with contact guidance used:
 
     ```
     python -m eval.eval_marker_representation_guide \
