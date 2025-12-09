@@ -550,7 +550,7 @@ For details on data loading, replaying, and training with the processed data, pl
 
   Download pretrained model and evaluator models:
 
-  -  Download the pretrained evaluator checkpoints from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
+  -  Download the checkpoints of the pretrained evaluator and text encoder used in training from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
 
   -  Optional: Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `./text2interaction/save/`.
   
