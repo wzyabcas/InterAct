@@ -7,6 +7,7 @@ from tqdm import tqdm
 import smplx
 import trimesh
 from scipy.spatial.transform import Rotation
+import gc  
 
 
 MOTION_PATH = './data/behave/sequences'
@@ -109,3 +110,6 @@ for k, name in tqdm(enumerate(data_name)):
     np.savez(os.path.join(MOTION_PATH, name, 'object.npz'), **obj)
     np.savez(os.path.join(MOTION_PATH, name, 'human.npz'), **human)
 
+    del smplx_output, verts, pelvis, obj_verts, angle_matrix
+    torch.cuda.empty_cache() if torch.cuda.is_available() else None
+    gc.collect()

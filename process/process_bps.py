@@ -37,9 +37,10 @@ if __name__ == "__main__":
                     custom_basis=bps_obj[None,...])['deltas'] # T X N X 3 
             bps_object_geo_np = bps_object_geo.data.detach().cpu().numpy()
             
-            np.save(os.path.join(OBJECT_BPS_PATH, f"{name}/{name}_1024.npy"), bps_object_geo_np)
-            
-            
+            obj_bps_dir = os.path.join(OBJECT_BPS_PATH, name)
+            os.makedirs(obj_bps_dir, exist_ok=True)
+
+            np.save(os.path.join(obj_bps_dir, f"{name}_1024.npy"), bps_object_geo_np)
             
 
         
