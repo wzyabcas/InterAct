@@ -15,7 +15,10 @@ import shutil
 from glob import glob
 from scipy.spatial.transform import Rotation as R
 import smplx
-from mesh import Mesh
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'text2interaction'))
+from render.mesh_utils import Mesh
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 from object_tensors import ObjectTensors
 from preprocess_dataset import construct_loader
 
@@ -48,7 +51,7 @@ def construct_layers(dev, subject_id):
         misc = json.load(f)
     vtemplate_p = f"./data/arctic/raw/meta/subject_vtemplates/{subject_id}.obj"
     mesh = Mesh(filename=vtemplate_p)
-    vtemplate = mesh.v
+    vtemplate = mesh.vertices
     gender = misc[subject_id]["gender"]
     mano_layers = {
         "smplx": build_smplx(1, gender, vtemplate),
@@ -182,7 +185,7 @@ def process_seq_params_direct(mano_p, dev, statcams, layers):
 def build_smpl_model(gender, subject_id):
     vtemplate_p = f"./data/arctic/raw/meta/subject_vtemplates/{subject_id}.obj"
     mesh = Mesh(filename=vtemplate_p)
-    vtemplate = mesh.v
+    vtemplate = mesh.vertices
     smpl_model = smplx.create(
         model_path=MODEL_PATH,
         model_type="smplx",

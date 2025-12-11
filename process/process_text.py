@@ -5,7 +5,7 @@ import re
 import spacy
 import codecs as cs
 
-datasets = ['behave', 'intercap',  'grab', ]
+datasets = ['behave']
 
 data_root = './data'
 

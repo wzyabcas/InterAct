@@ -4,7 +4,7 @@ import trimesh
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    datasets = ['behave', 'intercap', 'grab', 'omomo']
+    datasets = ['behave']
     data_root = './data'
     for dataset in datasets:
         print("Processing dataset:", dataset)

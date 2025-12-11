@@ -12,7 +12,9 @@ from copy import copy
 import sys
 sys.path.append('.')
 sys.path.append('..')
+sys.path.append('./text2interaction')
 from render.mesh_viz import visualize_body_obj
+from human_body_prior.body_model.body_model import BodyModel
 
 
 

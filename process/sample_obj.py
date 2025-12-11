@@ -2,7 +2,7 @@ import trimesh
 import os
 import numpy as np
 
-datasets = ['behave', 'intercap', 'grab', 'omomo']
+datasets = ['behave']
 data_root = './data'
 id_root = './assets/sample_objids'
 for dataset in datasets:

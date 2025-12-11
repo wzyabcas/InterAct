@@ -228,7 +228,7 @@ def visualize_grab(name, MOTION_PATH):
 
 
 if __name__ == "__main__":
-    datasets = ['behave', 'intercap', 'omomo', 'grab']
+    datasets = ['behave']
     data_root = './data'
     for dataset in datasets:
         dataset_path = os.path.join(data_root, dataset)
@@ -332,7 +332,7 @@ if __name__ == "__main__":
                     verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplx', 10, 12)
                 elif dataset.upper() == 'OMOMO':
                     verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplx', 16)
-                
+
                 mesh_obj = trimesh.load(os.path.join(OBJECT_PATH, f"{obj_name}/{obj_name}.obj"), force='mesh')
                 obj_verts, obj_faces = mesh_obj.vertices, mesh_obj.faces
                 new_obj_trans = np.array(new_obj_trans)

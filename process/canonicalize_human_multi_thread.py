@@ -399,7 +399,7 @@ def process_dataset(dataset, dataset_path):
                     print(f"Error in thread: {e}")
 
 if __name__ == "__main__":
-    datasets = ['behave', 'intercap', 'omomo', 'grab']
+    datasets = ['behave']
     data_root = './data'
     
     # Process each dataset concurrently using threads

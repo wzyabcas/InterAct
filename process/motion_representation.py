@@ -7,7 +7,7 @@ import smplx
 import trimesh
 from scipy.spatial.transform import Rotation
 from copy import copy
-from process.markerset import *
+from markerset import *
 from human_body_prior.body_model.body_model import BodyModel
 from pytorch3d.transforms import *
 
@@ -559,7 +559,7 @@ if __name__ == "__main__":
     all_clips = 0
     all_frames = 0
     fid_r, fid_l = [61, 52, 53, 40, 34, 49, 40], [29, 30, 18, 19, 7, 2, 15]
-    datasets = ['behave','intercap', 'grab', 'omomo']
+    datasets = ['behave']
     data_root = './data'
     for dataset in datasets:
         print(f'Loading {dataset} ...')
