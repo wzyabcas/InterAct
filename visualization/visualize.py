@@ -12,8 +12,8 @@ from copy import copy
 import sys
 sys.path.append('.')
 sys.path.append('..')
-from render.mesh_viz import visualize_body_obj
-
+from text2interaction.render.mesh_viz import visualize_body_obj
+from human_body_prior.body_model.body_model import BodyModel
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
