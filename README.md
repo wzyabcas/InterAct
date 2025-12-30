@@ -128,11 +128,13 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are
 
 <details>
   <summary>Licenses</summary>
+
 - **GRAB:** [License](https://grab.is.tuebingen.mpg.de/license.html)
 - **BEHAVE:** [License](https://virtualhumans.mpi-inf.mpg.de/behave/license.html)
 - **INTERCAP:** [License](https://intercap.is.tue.mpg.de/license.html)
 - **ARCTIC:** [License](https://github.com/zc-alexfan/arctic/blob/master/LICENSE)
 - **ParaHome:** [License](https://github.com/snuvclab/ParaHome?tab=readme-ov-file#license)
+
 </details>
 
 <details>
