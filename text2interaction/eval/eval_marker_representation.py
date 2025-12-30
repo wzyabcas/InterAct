@@ -195,7 +195,7 @@ def eval_t2hoi(val_loader, motion_model, motion_diffusion, textencoder,motionenc
                 # break
             motion_multimodality_batch = torch.cat(motion_multimodality_batch, dim=1) #(bs, NUM_REPEAT, d)
         motion_multimodality.append(motion_multimodality_batch)
-        break
+        
     
     ## insert
     motion_multimodality = torch.cat(motion_multimodality, dim=0).cpu().numpy() ## BS*MM_BATCH_NUM,NUM_REPEAT,D
