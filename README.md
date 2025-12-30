@@ -124,13 +124,15 @@ data
 
 ### 2. Process from scratch  
 
-The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the text labels annotated by our team. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
+The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the text labels annotated by our team. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
 
 <details>
   <summary>Licenses</summary>
 - **GRAB:** [License](https://grab.is.tuebingen.mpg.de/license.html)
 - **BEHAVE:** [License](https://virtualhumans.mpi-inf.mpg.de/behave/license.html)
 - **INTERCAP:** [License](https://intercap.is.tue.mpg.de/license.html)
+- **ARCTIC:** [License](https://github.com/zc-alexfan/arctic/blob/master/LICENSE)
+- **ParaHome:** [License](https://github.com/snuvclab/ParaHome?tab=readme-ov-file#license)
 </details>
 
 <details>
