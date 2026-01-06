@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-import kornia.geometry as tgm
 import cv2
 import numpy as np
 

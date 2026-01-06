@@ -434,12 +434,14 @@ def forward_smpl(poses, betas, trans, gender, model_type, num_betas, use_pca=Fal
     return verts, joints
 
 def main(args):
-    dataset_name = args.dataset_name
-    MOTION_PATH = f"../data/{dataset_name}/sequences_canonical"
-    OBJECT_PATH = f"../data/{dataset_name}/objects"
+    dataset_name_full = args.dataset_name
+    # Extract base dataset name (everything before first underscore if exists)
+    dataset_name = dataset_name_full.split('_')[0]
+    MOTION_PATH = f"../data/{dataset_name_full}/sequences_canonical"
+    OBJECT_PATH = f"../data/{dataset_name_full}/objects"
     data_name = sorted(os.listdir(MOTION_PATH))
-    os.makedirs(f"InterAct/{dataset_name.lower()}", exist_ok=True)
-    target_objects_dir = os.path.join("InterAct", dataset_name.lower(), "objects")
+    os.makedirs(f"intermimic/data/assets/objects/{dataset_name.lower()}", exist_ok=True)
+    target_objects_dir = os.path.join("intermimic/data/assets/objects", dataset_name.lower())
     if not os.path.exists(target_objects_dir):
         os.makedirs(target_objects_dir, exist_ok=True)
 
@@ -788,11 +790,9 @@ def main(args):
 
 
             smpl_local_robot.load_from_skeleton(betas=torch.from_numpy(beta[None,]), gender=gender_number, objs_info=None)
-            os.makedirs(f"../InterAct/{dataset_name.lower()}/{model_type}", exist_ok=True)
-            smpl_local_robot.write_xml("../InterAct/{}/{}/{}_{}.xml".format(dataset_name.lower(), model_type, dataset_name, sub))
-            smpl_local_robot.write_xml("../intermimic/data/assets/smplx/{}_{}_{}.xml".format(model_type, dataset_name, sub))
-            skeleton_tree = SkeletonTree.from_mjcf("../InterAct/{}/{}/{}_{}.xml".format(dataset_name.lower(), model_type, dataset_name, sub))
-            
+            smpl_local_robot.write_xml("intermimic/data/assets/smplx/{}_{}_{}.xml".format(model_type, dataset_name, sub))
+            skeleton_tree = SkeletonTree.from_mjcf("intermimic/data/assets/smplx/{}_{}_{}.xml".format(model_type, dataset_name, sub))
+
             root_trans_offset = torch.from_numpy(root_trans) + skeleton_tree.local_translation[0]
 
             new_sk_state = SkeletonState.from_rotation_and_root_translation(
@@ -896,13 +896,13 @@ def main(args):
             data[:, 331:331+52] = contact_part_label.double()
             data[:, 331+52:331+52+52*4] = torch.from_numpy(pose_quat_global).double().view(-1, 52*4)
 
-
-            file_path = f"../InterAct/{dataset_name.lower()}/{name}_{obj_name}_intermimic.pt"
+            os.makedirs(f"intermimic/InterAct/{dataset_name_full}", exist_ok=True)
+            file_path = f"intermimic/InterAct/{dataset_name_full}/{name}.pt"
 
             torch.save(data, file_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="OMOMO")
+    parser.add_argument("--dataset_name", type=lambda s: s.lower(), default="omomo")
     args = parser.parse_args()
     main(args)

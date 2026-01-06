@@ -155,7 +155,8 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are
     │   ├── neutral
     │   │   ├── model.npz
     │   ├── SMPLH_FEMALE.pkl
-    │   └── SMPLH_MALE.pkl
+    │   ├── SMPLH_MALE.pkl
+    │   └── SMPLH_NEUTRAL.pkl    
     └── smplx
         ├── SMPLX_FEMALE.npz
         ├── SMPLX_FEMALE.pkl
@@ -530,21 +531,21 @@ After completing the *data preparation* steps above, run the following to genera
 
 ```bash
 cd simulation
-python smpl_to_simulation.py --dataset_name [dataset]
+python interact2mimic.py --dataset_name [dataset]
 ```
 
 After processing, the generated files will be organized as follows:
 
 * **Motion files** (`.pt`) are stored in
-  `InterAct/{dataset}`
+  `simulation/intermimic/InterAct/{dataset}`
 
 * **SMPL humanoid files** (`.xml`) are stored in
-  `InterAct/{dataset}/{model_type}`
+  `simulation/intermimic/data/assets/{model_type}`
 
 * **Object files** (`.urdf`) are stored in
-  `InterAct/{dataset}/objects`
+  `simulation/intermimic/data/assets/objects/{dataset}`
 
-For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic).
+For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic). We adapt the conversion code from [PHC](https://github.com/ZhengyiLuo/PHC), sepcial thanks to them!
 
 ## Text2Interaction
 
