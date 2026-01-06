@@ -451,7 +451,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are
 <details>
   <summary>Optional: HOI Correction</summary>
 
-  - To get the corrected OMOMO, please download through this [link](https://drive.google.com/file/d/1DODoyYDH7iPGZx2zONTXkw1fYNipbJ8L/view?usp=sharing), or process from scratch following the scripts below. 
+  - To get the corrected OMOMO, please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access, or process from scratch following the scripts below. 
 
   - Step1: Correct the full-body hoi by:
 
