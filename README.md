@@ -515,7 +515,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are
 
     `--dataset`: dataset in [grab, omomo, chairs, intercap]
     
-    We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , sepcial thanks to them!
+    We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , special thanks to them!
 
 </details>
 
@@ -545,7 +545,7 @@ After processing, the generated files will be organized as follows:
 * **Object files** (`.urdf`) are stored in
   `simulation/intermimic/data/assets/objects/{dataset}`
 
-For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic). We adapt the conversion code from [PHC](https://github.com/ZhengyiLuo/PHC), sepcial thanks to them!
+For details on data loading, replaying, and training with the processed data, please refer to the [InterMimic repository](https://github.com/Sirui-Xu/InterMimic). We adapt the conversion code from [PHC](https://github.com/ZhengyiLuo/PHC), special thanks to them!
 
 ## Text2Interaction
 
