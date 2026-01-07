@@ -117,6 +117,9 @@ data
 │   	└── ...
 │── imhd
 │── chairs
+│── omomo
+│── omomo_correct
+│── omomo_aug
 └── annotations
 ```
 </details>
