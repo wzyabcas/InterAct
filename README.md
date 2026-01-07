@@ -76,7 +76,7 @@ Please follow the steps below to download, process, and organize the data.
 
 ### 1. Request authorization
 
-Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from neuraldome, imhd, and chairs according to the following directory structure.
+Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from neuraldome, imhd, chairs, OMOMO, corrected OMOMO and OMOMO augmentation according to the following directory structure.
 
 <details>
   <summary>Data structure</summary>
