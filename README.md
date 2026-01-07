@@ -466,8 +466,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** and **ParaHome** datasets are
     python ./hoi_correction/scan_diff.py --dataset omomo
     python ./hoi_correction/correct_wrist.py --dataset omomo
     ```
-    The corrected sequences can be downloaded through this [link](https://drive.google.com/file/d/1HppMTRAHr24aIACYSeMCEFAf9Ou-LG5_/view?usp=sharing)
-
+    
   - Step3: Correct the hand by:
 
     ```bash
@@ -558,7 +557,7 @@ For details on data loading, replaying, and training with the processed data, pl
   -  Download the checkpoints of the pretrained evaluator and text encoder used in training from this [link](https://drive.google.com/file/d/1-bpafRyaVHdX4TsltDHiGIxcjw-k1Fnf/view?usp=sharing), and put in `./text2interaction/assets/eval`.
 
   -  Optional: Download the pretrained model checkpoints from this [link](https://drive.google.com/file/d/1vfskohWxr7gBuve1MLD1RlGut_xSN8mL/view?usp=sharing), and put in `./text2interaction/save/`.
-  
+
   </details>
 
 <details>
@@ -570,7 +569,7 @@ For details on data loading, replaying, and training with the processed data, pl
   cd text2interaction
   python -m train.hoi_diff --save_dir ./save/t2m_interact --dataset interact
   ```
-  
+
   </details>
 
   <details>
