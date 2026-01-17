@@ -493,61 +493,55 @@ def main(args):
         with np.load(os.path.join(MOTION_PATH, name, 'object.npz'), allow_pickle=True) as f:
             obj_angles, obj_trans, obj_name = f['angles'], f['trans'], str(f['name'])
         if dataset_name.upper() == 'GRAB':
-            motion_file = os.path.join(MOTION_PATH,name,'motion.npz')
-            seq_data = parse_npz(motion_file)
-            n_comps = seq_data['n_comps']
-            gender = seq_data['gender']
-            sbj_id = seq_data['sbj_id']
-            table_angles, table_trans = seq_data['table']['params']['global_orient'][::4], seq_data['table']['params']['transl'][::4]
-            table_angles[:,0] = 0
-            table_angles[:,1] = 0
-            table_angles[:,2] = -np.pi
+            # Modified to work with processed GRAB format (from process_grab.py)
+            with np.load(os.path.join(MOTION_PATH, name, 'human.npz'), allow_pickle=True) as f:
+                poses = f['poses']
+                vtemp = f['vtemp']
+                trans = f['trans']
+                gender = str(f['gender'])
 
-            T = seq_data.n_frames
-            sbj_vtemp = load_sbj_verts(sbj_id, seq_data, os.path.dirname(MOTION_PATH))
+            n_comps = 24  # GRAB uses 24 PCA components for hands
+            T = len(poses)
+            sbj_vtemp = vtemp  # Use vtemp directly
 
-            smpl_model = smplx.create( 
-                    model_path=MODEL_PATH,
-                    model_type='smplx',
-                    gender=gender,
-                    num_pca_comps=n_comps,
-                    v_template = sbj_vtemp,
-                    batch_size=T).cuda()
-            sbj_parms = params2torch(seq_data.body.params)
+            smpl_model = smplx.create(
+                model_path=MODEL_PATH,
+                model_type='smplx',
+                gender=gender,
+                num_pca_comps=n_comps,
+                v_template=sbj_vtemp,
+                batch_size=T).cuda()
 
-            # Define the rotation angle in radians (90 degrees)
-            angle = 0
+            # Forward pass to get vertices and joints
+            smplx_output = smpl_model(
+                body_pose=torch.from_numpy(poses[:, 3:66]).float().cuda(),
+                global_orient=torch.from_numpy(poses[:, :3]).float().cuda(),
+                left_hand_pose=torch.from_numpy(poses[:, 66:90]).float().cuda(),
+                right_hand_pose=torch.from_numpy(poses[:, 90:114]).float().cuda(),
+                transl=torch.from_numpy(trans).float().cuda(),
+            )
 
-            # Create a rotation matrix for the X-axis rotation
-            rotation_matrix_x = sRot.from_euler('x', angle, degrees=False)
-
-
-            rotvecs  = sbj_parms['global_orient'].cpu().numpy()
-            rotations = sRot.from_rotvec(rotvecs)
-            rotated_rotations = rotation_matrix_x * rotations
-            original_dtype = sbj_parms['global_orient'].dtype
-            sbj_parms['global_orient'] = torch.tensor(rotated_rotations.as_rotvec(), dtype=original_dtype).to(device)
-            # fullpose: shape (T, 165) or (T, 156) depending on SMPL-X config
-            fullpose = seq_data.body.params['fullpose'].copy()
-
-            # Replace the root joint rotation (first 3 values)
-            fullpose[:, :3] = sbj_parms['global_orient'].cpu().numpy()
-
-            smplx_output = smpl_model(**sbj_parms)
             vertices = to_cpu(smplx_output.vertices)
             joints = to_cpu(smplx_output.joints)
             beta = smpl_model.betas[0].detach().cpu().numpy()
-            
-            root_trans = rotation_matrix_x.apply(sbj_parms['transl'].cpu().numpy())
 
-            root_trans_tensor = root_trans
-            pose_aa_tensor = fullpose
-            # Convert to numpy arrays for compatibility with the rest of the code
-            root_trans = root_trans_tensor.numpy() if isinstance(root_trans_tensor, torch.Tensor) else root_trans_tensor
-            pose_aa = pose_aa_tensor.numpy() if isinstance(pose_aa_tensor, torch.Tensor) else pose_aa_tensor
-            pose_aa = pose_aa[:, :156]
-            smpl_data_entry = {'gender': gender, 'fps': seq_data.get('fps', 30.0)}
-            grab_n_comps = n_comps  # Store n_comps for later use
+            # Expand poses to 156 dimensions (add zeros for full hand pose)
+            # poses format: global_orient(3) + body_pose(63) + left_hand_pca(24) + right_hand_pca(24) = 114
+            # Need to decode PCA to full hand pose (45 each) for compatibility
+            left_hand_pca = torch.from_numpy(poses[:, 66:90]).float()
+            right_hand_pca = torch.from_numpy(poses[:, 90:114]).float()
+            left_hand_full = left_hand_pca @ smpl_model.left_hand_components[:24].cpu() + smpl_model.left_hand_mean.cpu()
+            right_hand_full = right_hand_pca @ smpl_model.right_hand_components[:24].cpu() + smpl_model.right_hand_mean.cpu()
+
+            pose_aa = np.concatenate([
+                poses[:, :66],  # global_orient + body_pose
+                left_hand_full.numpy(),
+                right_hand_full.numpy()
+            ], axis=1)
+
+            root_trans = trans.copy()
+            smpl_data_entry = {'gender': gender, 'fps': 30.0}
+            grab_n_comps = n_comps
 
         else:
             motion_file = None
