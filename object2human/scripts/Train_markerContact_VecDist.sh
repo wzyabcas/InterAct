@@ -1,0 +1,19 @@
+python trainer_full_body_manip_diffusion.py \
+--window=120 \
+--batch_size=64 \
+--project="./omomo_runs" \
+--exp_name="alldata_singleStageMultiTask_train_markerVectorDist_bps256_partEval_1101" \
+--wandb_pj_name="omomo_alldata" \
+--entity="???" \
+--data_root_folder="???" \
+--use_object_split \
+--use_all_data \
+--multi_task \
+--bps_dim 256 \
+--use_bps_info \
+--use_human_contact_vec \
+--use_human_contact_dist \
+--n_dec_layers 4 \
+--d_k 256 \
+--d_v 256 \
+--d_model 512 
