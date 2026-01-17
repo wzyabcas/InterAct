@@ -327,26 +327,29 @@ def load_sbj_verts(sbj_id, seq_data, data_root_folder = '../data/grab/'):
 def visualize_grab(name, MOTION_PATH):
     """
     vertices: (N, 10475, 3)
+    Modified to work with processed GRAB data format
     """
-    motion_file = os.path.join(MOTION_PATH,name,'human.npz')
-    seq_data = parse_npz(motion_file)
-    n_comps = seq_data['n_comps']
-    gender = seq_data['gender']
-    sbj_id = seq_data['sbj_id']
-    T = seq_data.n_frames
-    # sbj_vtemp = load_sbj_verts(sbj_id, seq_data, os.path.dirname(MOTION_PATH))
-    sbj_vtemp = load_sbj_verts(sbj_id, seq_data)
+    with np.load(os.path.join(MOTION_PATH, name, 'human.npz'), allow_pickle=True) as f:
+        poses, vtemp, trans, gender = f['poses'], f['vtemp'], f['trans'], str(f['gender'])
 
-    smpl_model = smplx.create( 
+    n_comps = 24  # GRAB uses 24 PCA components for hands
+    T = len(poses)
+
+    smpl_model = smplx.create(
         model_path=MODEL_PATH,
         model_type='smplx',
         gender=gender,
         num_pca_comps=n_comps,
-        v_template = sbj_vtemp,
+        v_template=vtemp,
         batch_size=T).cuda()
-    sbj_parms = params2torch(seq_data.body.params)
 
-    smplx_output = smpl_model(**sbj_parms)
+    smplx_output = smpl_model(
+        body_pose=torch.from_numpy(poses[:, 3:66]).float().cuda(),
+        global_orient=torch.from_numpy(poses[:, :3]).float().cuda(),
+        left_hand_pose=torch.from_numpy(poses[:, 66:90]).float().cuda(),
+        right_hand_pose=torch.from_numpy(poses[:, 90:114]).float().cuda(),
+        transl=torch.from_numpy(trans).float().cuda(),
+    )
     verts = to_cpu(smplx_output.vertices)
     faces = smpl_model.faces.astype(np.int32)
 
