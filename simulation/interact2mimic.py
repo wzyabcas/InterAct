@@ -493,16 +493,16 @@ def main(args):
         with np.load(os.path.join(MOTION_PATH, name, 'object.npz'), allow_pickle=True) as f:
             obj_angles, obj_trans, obj_name = f['angles'], f['trans'], str(f['name'])
         if dataset_name.upper() == 'GRAB':
-            # Modified to work with processed GRAB format (from process_grab.py)
+            # Modified to work with processed GRAB format
             with np.load(os.path.join(MOTION_PATH, name, 'human.npz'), allow_pickle=True) as f:
                 poses = f['poses']
                 vtemp = f['vtemp']
                 trans = f['trans']
                 gender = str(f['gender'])
 
-            n_comps = 24  # GRAB uses 24 PCA components for hands
+            n_comps = 24 
             T = len(poses)
-            sbj_vtemp = vtemp  # Use vtemp directly
+            sbj_vtemp = vtemp  
 
             smpl_model = smplx.create(
                 model_path=MODEL_PATH,
@@ -512,7 +512,6 @@ def main(args):
                 v_template=sbj_vtemp,
                 batch_size=T).cuda()
 
-            # Forward pass to get vertices and joints
             smplx_output = smpl_model(
                 body_pose=torch.from_numpy(poses[:, 3:66]).float().cuda(),
                 global_orient=torch.from_numpy(poses[:, :3]).float().cuda(),
@@ -525,16 +524,13 @@ def main(args):
             joints = to_cpu(smplx_output.joints)
             beta = smpl_model.betas[0].detach().cpu().numpy()
 
-            # Expand poses to 156 dimensions (add zeros for full hand pose)
-            # poses format: global_orient(3) + body_pose(63) + left_hand_pca(24) + right_hand_pca(24) = 114
-            # Need to decode PCA to full hand pose (45 each) for compatibility
             left_hand_pca = torch.from_numpy(poses[:, 66:90]).float()
             right_hand_pca = torch.from_numpy(poses[:, 90:114]).float()
             left_hand_full = left_hand_pca @ smpl_model.left_hand_components[:24].cpu() + smpl_model.left_hand_mean.cpu()
             right_hand_full = right_hand_pca @ smpl_model.right_hand_components[:24].cpu() + smpl_model.right_hand_mean.cpu()
 
             pose_aa = np.concatenate([
-                poses[:, :66],  # global_orient + body_pose
+                poses[:, :66],  
                 left_hand_full.numpy(),
                 right_hand_full.numpy()
             ], axis=1)
