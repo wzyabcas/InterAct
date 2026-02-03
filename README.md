@@ -38,17 +38,18 @@
 ![](./assets/teaser.png)
 
 ## News
-- [2025-04-20] Initial release of the InterAct dataset
-- [2025-07-08] Release the proessing code for unified SMPL-H representation
-- [2025-09-12] Publish the paper on arXiv
-- [2025-10-06] Release the hoi correction pipeline
-- [2025-10-06] Release the evaluation pipeline for text-to-hoi
+- [2025-04-20] Initial release of the InterAct dataset.
+- [2025-07-08] Release the proessing code for unified SMPL-H representation.
+- [2025-09-12] Publish the paper on arXiv.
+- [2025-10-06] Release the hoi correction pipeline.
+- [2025-10-06] Release the evaluation pipeline for text-to-hoi.
 - [2025-10-29] Release corrected OMOMO data.
 - [2025-11-23] Provide additional supports on ARCTIC and ParaHome.
 - [2025-11-26] Release training code, pretrained model and evaluator checkpoints.
-- [2025-11-26] Release augmentated data for InterAct-X. 
+- [2025-11-26] Release augmentated data for InterAct-X.
 - [2025-12-07] 🚀 Release the data conversion pipeline for bringing InterAct into simulation, specifically for [InterMimic](https://github.com/Sirui-Xu/InterMimic) use.
-- [2026-02-03] Release the pipeline for object-to-human
+- [2026-02-03] Release the pipeline for object-to-human.
+- [2025-02-03] Release corrected OMOMO data V2.
 
 
 ## TODO
