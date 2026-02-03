@@ -48,6 +48,8 @@
 - [2025-11-26] Release training code, pretrained model and evaluator checkpoints.
 - [2025-11-26] Release augmentated data for InterAct-X. 
 - [2025-12-07] 🚀 Release the data conversion pipeline for bringing InterAct into simulation, specifically for [InterMimic](https://github.com/Sirui-Xu/InterMimic) use.
+- [2026-02-03] Release the pipeline for object-to-human
+
 
 ## TODO
 - [x] Release comprehensive text descriptions, data processing workflows, visualization tools, and usage guidelines
@@ -59,6 +61,7 @@
 - [x] Release augmentation data 
 - [x] Release baseline constructions for text2HOI. 
 - [x] Release the pipeline for constructing simulation ready data 
+- [x] Release baseline constructions for Object to Human
 - [ ] Release baseline constructions for the other HOI generative tasks
 - [ ] Release the dataset with unified SMPL representation
 - [ ] Release retargeted HOI dataset with unified human shape
@@ -597,6 +600,31 @@ For details on data loading, replaying, and training with the processed data, pl
     --dataset interact 
     ```
     </details>
+
+## Object2Human
+
+<details>
+   <summary>Training</summary>
+
+  To train on our benchmark, execute the following steps:
+
+  ```
+  cd object2human
+  bash ./scripts/Train_markerContact_VecDist.sh
+  ```
+
+  </details>
+
+  <details>
+  <summary>Evaluation</summary>
+
+  To evaluate on our benchmark, execute the following steps
+
+  ```
+  cd object2human
+  bash ./scripts/Eval.sh
+  ```
+  </details>
 
 
 ## Visualization
