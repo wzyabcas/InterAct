@@ -54,10 +54,10 @@ class TextOnlyDataset(data.Dataset):
             dataset_path = os.path.join(opt.data_root, dataset)
             sequences_path = os.path.join(dataset_path, 'sequences_canonical')
             sequences_names = os.listdir(sequences_path)
-            if debug:
-                L=len(sequences_names)
-                L_debug=min(L,200)
-                sequences_names=sequences_names[:L_debug]
+            # if debug:
+            #     L=len(sequences_names)
+            #     L_debug=min(L,200)
+            #     sequences_names=sequences_names[:L_debug]
             for name in tqdm(sequences_names):
                 try:
                     motion = np.load(os.path.join(sequences_path, name, 'motion.npy'))
@@ -224,10 +224,10 @@ class Text2MotionDatasetV3(data.Dataset):
             dataset_path = os.path.join(opt.data_root, dataset)
             sequences_path = os.path.join(dataset_path, 'sequences_canonical')
             sequences_names = os.listdir(sequences_path)
-            if debug or 1:
-                L=len(sequences_names)
-                L_debug=min(L,200)
-                sequences_names=sequences_names[:L_debug]
+            # if debug or 1:
+            #     L=len(sequences_names)
+            #     L_debug=min(L,200)
+            #     sequences_names=sequences_names[:L_debug]
                 # sequences_names=sequences_names[:100]
             for name in tqdm(sequences_names):
                 try:
@@ -699,13 +699,15 @@ class Behave(data.Dataset):
         elif  self.training_stage>=2:
 
             # used by our models
+            print(opt.meta_dir)
             self.mean = np.load(pjoin(opt.meta_dir, 'Mean_all_can_new.npy'))
             self.std = np.load(pjoin(opt.meta_dir, 'Std_all_can_new.npy'))
+            print(pjoin(opt.meta_dir, 'Mean_all_can_new.npy'))
 
 
 
             self.split_file = pjoin(opt.meta_dir, 'test.txt') if obj_split else pjoin(opt.meta_dir, 'test_seq.txt')
-
+            
             if mode == 'text_only':
                 self.t2m_dataset = TextOnlyDataset(self.opt, self.mean, self.std, self.datasets, self.split_file, obj_split,self.debug)
             else:

@@ -73,19 +73,13 @@ def get_dataset_loader(conf: DatasetConfig):
     collate = get_collate_fn(conf.name, conf.hml_mode, conf.training_stage)
 
     if conf.hml_mode == 'train':
-        if torch.distributed.is_initialized():
-            sampler = dist_utils.DistributedSampler(dataset,shuffle=True)
-            is_shuffle=False
-        else:
-            sampler = None
-            is_shuffle=True
         loader = DataLoader(
-            dataset, batch_size=conf.batch_size, shuffle=is_shuffle,sampler=sampler,
-            num_workers=16, drop_last=True, collate_fn=collate, pin_memory=True
+            dataset, batch_size=conf.batch_size, shuffle=True,
+            num_workers=8, drop_last=True, collate_fn=collate,
         )
     else:
         loader = DataLoader(
-            dataset, batch_size=conf.batch_size, shuffle=True,
+            dataset, batch_size=conf.batch_size, shuffle=False,
             num_workers=8, drop_last=True, collate_fn=collate,
         )
     return loader

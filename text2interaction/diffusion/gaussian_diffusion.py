@@ -463,7 +463,7 @@ class GaussianDiffusion:
 
                 # NOTE hard code
                 x = new_x
-                # x[:,:231] = x[:,:231] - tao1 * grad[:,:231] 
+                x[:,:231] = x[:,:231] - tao1 * grad[:,:231] 
                 x[:,476:482] = x[:,476:482] - tao2 * grad[:,476:482]
                 x[:,482:485] = x[:,482:485] - tao3 * grad[:,482:485]
                 # x[:,572:] = x[:,572:] - tao2 * grad[:,572:] 
