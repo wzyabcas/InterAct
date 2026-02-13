@@ -588,18 +588,14 @@ For details on data loading, replaying, and training with the processed data, pl
   - Evaluate on the marker representation:
 
     ```
-    python -m eval.eval_marker_representation \
-    --model_path MODEL_PATH \
-    --batch_size 64 \
-    --dataset interact 
+    cd text2interaction
+    bash ./scripts/eval.sh
     ```
   - Evaluate on the marker representation with contact guidance used:
 
     ```
-    python -m eval.eval_marker_representation_guide \
-    --model_path MODEL_PATH \
-    --batch_size 64 \
-    --dataset interact 
+    cd text2interaction
+    bash ./scripts/eval_wguide.sh
     ```
     </details>
 
