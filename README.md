@@ -81,7 +81,7 @@ Please follow the steps below to download, process, and organize the data.
 
 ### 1. Request authorization
 
-Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from NeuralDome, IMHD, CHAIRS, OMOMO, and its corrected (V1 and V2) and augmented version according to the following directory structure.
+Please fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLScMCfdd8BXzDBZ3iw0x5zA3KSTlD1F2GTaO8ylDG9Cj1upaPw/viewform?usp=sharing) to request non-commercial access to InterAct and InterAct-X. Once authorized, you'll receive the download links. Organize the data from NeuralDome, IMHD, CHAIRS, OMOMO, and its corrected and augmented data according to the following directory structure.
 
 <details>
   <summary>Data structure</summary>
@@ -123,8 +123,6 @@ data
 │── imhd
 │── chairs
 │── omomo
-│── omomo_correct
-│── omomo_aug
 └── annotations
 ```
 </details>
