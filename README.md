@@ -554,6 +554,7 @@ For details on data loading, replaying, and training with the processed data, pl
 
 ## Text2Interaction
 
+> **Additional dependency:** `pointnet2_ops` is required for this module. Run `bash install_pointnet2_ops.sh` from the project root to install it.
 
 <details>
    <summary>Prepare</summary>
