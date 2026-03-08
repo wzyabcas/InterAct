@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
-from utils import vertex_normals
-from render.mesh_viz import visualize_body_obj
-from bone_lists import bone_list_behave, bone_list_omomo
-from loss import point2point_signed
+from hoi_correction.utils import vertex_normals
+# from render.mesh_viz import visualize_body_obj  # unused
+# from bone_lists import bone_list_behave, bone_list_omomo  # unused
+from hoi_correction.loss import point2point_signed
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 to_cpu = lambda tensor: tensor.detach().cpu()
 import numpy as np

@@ -28,13 +28,13 @@ to_cpu = lambda tensor: tensor.detach().cpu()
 from scipy.spatial.transform import Rotation as R
 from human_body_prior.body_model.body_model import BodyModel
 
-from utils import vertex_normals
+from hoi_correction.utils import vertex_normals
 # from render.mesh_viz import visualize_body_obj
-from loss import point2point_signed
-from prior import *
-from fix_pose import fix_joint_poses_simple, pose_delta_axis_angle
-from interpolate import smooth_flips
-from optimize_wrist import optimize_poses
+from hoi_correction.loss import point2point_signed
+from hoi_correction.prior import *
+from hoi_correction.fix_pose import fix_joint_poses_simple, pose_delta_axis_angle
+from hoi_correction.interpolate import smooth_flips
+from hoi_correction.optimize_wrist import optimize_poses
 
 # Joint indices
 LEFT_COLLAR = 13
