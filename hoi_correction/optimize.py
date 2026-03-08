@@ -96,18 +96,18 @@ LHAND_SMALL_INDEXES_DETAILED.append(np.load(f'./assets/smplx_hand_index/lhand_77
 
 
 ## NOT USED, Finger indexes
-RHAND_INDEXES=[]
-for i in range(6):
-    RHAND_INDEXES.append(np.load(f'./assets/smplx_hand_index/hand_778_{i}.npy'))
-RHAND_SMALL_INDEXES=[]
-for i in range(6):
-    RHAND_SMALL_INDEXES.append(np.load(f'./assets/smplx_hand_index/hand_778_small_{i}.npy'))
-LHAND_INDEXES=[]
-for i in range(6):
-    LHAND_INDEXES.append(np.load(f'./assets/smplx_hand_index/lhand_778_{i}.npy'))
-LHAND_SMALL_INDEXES=[]
-for i in range(6):
-    LHAND_SMALL_INDEXES.append(np.load(f'./assets/smplx_hand_index/lhand_778_small_{i}.npy'))
+# RHAND_INDEXES=[]
+# for i in range(6):
+#     RHAND_INDEXES.append(np.load(f'./assets/smplx_hand_index/hand_778_{i}.npy'))
+# RHAND_SMALL_INDEXES=[]
+# for i in range(6):
+#     RHAND_SMALL_INDEXES.append(np.load(f'./assets/smplx_hand_index/hand_778_small_{i}.npy'))
+# LHAND_INDEXES=[]
+# for i in range(6):
+#     LHAND_INDEXES.append(np.load(f'./assets/smplx_hand_index/lhand_778_{i}.npy'))
+# LHAND_SMALL_INDEXES=[]
+# for i in range(6):
+#     LHAND_SMALL_INDEXES.append(np.load(f'./assets/smplx_hand_index/lhand_778_small_{i}.npy'))
 
 
 

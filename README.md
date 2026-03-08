@@ -189,6 +189,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     ```
     pip install -r requirements.txt
     python -m spacy download en_core_web_sm
+    bash install_human_body_prior.sh
     ```
 
 3. Prepare raw data

@@ -31,5 +31,6 @@ scikit-image
 dotmap
 
 human-body-prior
+git+https://github.com/hassony2/chumpy.git
 git+https://github.com/otaheri/chamfer_distance
 git+https://github.com/otaheri/bps_torch
