@@ -98,14 +98,15 @@ LHAND_SMALL_INDEXES_DETAILED.append(np.load(f'./assets/smplh_hand_index/lhand_77
 def set_smpl_all(dataset):
     
     MODEL_PATH='./models'
+    smplh_model_root = os.path.join(MODEL_PATH, 'mano_v1_2/models/')
 
     global smpl_all
     if dataset in ['behave']:
         smpl_type='smplh_10'
         sbj_m_female = SMPL_Layer(center_idx=0, gender='female', num_betas=10,
-                               model_root=str(os.path.join(MODEL_PATH,'smplh/mano_v1_2/models/')),hands=True).to(device)
+                               model_root=str(smplh_model_root),hands=True).to(device)
         sbj_m_male = SMPL_Layer(center_idx=0, gender='male', num_betas=10,
-                        model_root=str(os.path.join(MODEL_PATH,'smplh/mano_v1_2/models/')),hands=True).to(device)
+                        model_root=str(smplh_model_root),hands=True).to(device)
         smpl_all={'male':sbj_m_male,'female':sbj_m_female}
 
     elif dataset in [ 'neuraldome','imhd']:
@@ -349,7 +350,8 @@ def optimize1(name,dataset_name,smpl_type):
     delta_right = torch.norm(right_foot[1:, [0, 2]] - right_foot[:-1, [0, 2]], dim=1) + 1e-6
   
     
-    def calc_loss(body_rec, transl_rec, glo_rot_rec, obj_transl_rec, obj_rot_rec, hand_pose_rec, ratio,epoch,smpl_type,dataset_name): 
+    def calc_loss(body_rec, transl_rec, glo_rot_rec, obj_transl_rec, obj_rot_rec, hand_pose_rec, ratio,epoch,smpl_type,dataset_name):
+        global whether_touch
         with torch.enable_grad():       
             verts,jtr,faces=forward_human(smpl_type,glo_rot_rec,body_rec,hand_pose_rec,beta,transl_rec)
            
@@ -597,6 +599,7 @@ if __name__ == '__main__':
             name=os.path.join(root_path,fn)
             export_file = f"./data/{dataset_name}_correct_fullbody/sequences_canonical/"
             os.makedirs(export_file, exist_ok=True)
+            os.makedirs(os.path.join(export_file, fn), exist_ok=True)
             save_path_h = os.path.join(export_file, fn,'human.npz')
             save_path_o = os.path.join(export_file, fn,'object.npz')
        
@@ -611,7 +614,7 @@ if __name__ == '__main__':
             # Could comment the following lines if this problem doesn't occur in your side.
             if 'chair_black' in name:
                 continue
-        except:
-            pass
+        except Exception as e:
+            print(f"[WARN] failed on {fn}: {e}")
 
         
