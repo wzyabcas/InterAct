@@ -673,7 +673,7 @@ if __name__ == '__main__':
         
         os.makedirs(tb,exist_ok=True)
         try:
-            tmp_smplhparams, tmp_objparams=optimize1(0,name,False,fn,dataset_name)
+            tmp_smplhparams, tmp_objparams=optimize1(name,fn,dataset_name)
             
         except:
             pass
