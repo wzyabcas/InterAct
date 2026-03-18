@@ -29,6 +29,9 @@ setuptools
 pyopengl
 scikit-image
 dotmap
+clip @ git+https://github.com/openai/CLIP.git
+pytorch_lightning
+transformers
 
 human-body-prior
 git+https://github.com/hassony2/chumpy.git
