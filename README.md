@@ -599,6 +599,26 @@ For details on data loading, replaying, and training with the processed data, pl
     ```
     </details>
 
+     <details>
+
+  <summary>Inference</summary>
+
+  To inference with the trained model, execute the following steps
+
+  - Inference with contact guidance:
+
+    ```
+    cd text2interaction
+    bash ./scripts/run_sample_guide_contact.sh
+    ```
+  - Inference without contact guidance:
+
+    ```
+    cd text2interaction
+    bash ./scripts/run_sample_nonguide.sh
+    ```
+    </details>
+
 ## Object2Human
 
 <details>

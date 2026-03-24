@@ -184,6 +184,8 @@ def add_sampling_options(parser):
                        help="model path of human motion generation")
     group.add_argument("--afford_model_path", default='./save/afford_pred/model000000000.pt', type=str,
                        help="model path of affordance learning")
+    group.add_argument("--regress_smpl", default=False, action="store_true",  help="whether use guidance learning ")  
+
                        
 
 
