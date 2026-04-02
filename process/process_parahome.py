@@ -104,6 +104,25 @@ def closest_axis_unit(v):
     return axes[np.argmax(np.abs(dots))]
 
 
+def estimate_forward_from_joints(joints_frame0):
+    """Estimate human forward direction from first-frame joints (horizontal plane)."""
+    up = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+    # SMPL-X joints: left/right shoulder = 16/17, left/right hip = 1/2.
+    right_vec = joints_frame0[17] - joints_frame0[16]
+    if np.linalg.norm(right_vec) < 1e-6:
+        right_vec = joints_frame0[2] - joints_frame0[1]
+    right_vec[1] = 0.0
+    if np.linalg.norm(right_vec) < 1e-6:
+        return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+
+    right_vec = _normalize(right_vec).reshape(3,)
+    forward = np.cross(right_vec, up)
+    forward[1] = 0.0
+    if np.linalg.norm(forward) < 1e-6:
+        return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+    return _normalize(forward).reshape(3,)
+
+
 def build_smplx_model_parahome(gender, num_betas=20, model_path='models'):
     """Build SMPLX model for ParaHome."""
     smplx_model = smplx.create(
@@ -283,36 +302,82 @@ def apply_gravity_transformation(poses, betas, trans, gender, obj_angles_dict, o
         obj_angles_new_dict[obj_part_name] = obj_angles_new.astype(np.float32)
         obj_trans_new_dict[obj_part_name] = obj_trans_new.astype(np.float32)
     
-    # Get new vertices to find minimum Y
-    with torch.no_grad():
-        smpl_out_final = smpl_model(
-            body_pose=torch.from_numpy(body_pose_reshaped).float().to(device),
-            global_orient=torch.from_numpy(global_orient).float().to(device),
-            left_hand_pose=torch.from_numpy(lhand_pose_reshaped).float().to(device),
-            right_hand_pose=torch.from_numpy(rhand_pose_reshaped).float().to(device),
-            betas=torch.from_numpy(betas[None, :]).repeat(T, 1).float().to(device),
-            transl=torch.from_numpy(trans_new).float().to(device),
-            jaw_pose=torch.zeros([T, 3]).float().to(device),
-            leye_pose=torch.zeros([T, 3]).float().to(device),
-            reye_pose=torch.zeros([T, 3]).float().to(device),
-            expression=torch.zeros([T, 10]).float().to(device)
-        )
-    
-    verts_new = smpl_out_final.vertices.detach().cpu().numpy()
-    min_y_h = float(verts_new[0, :, 1].min())
-    
+    # ---------------------------------------------------------------------
+    # Final canonicalization:
+    # 1) rotate around +Y so first-frame facing direction aligns to +Z
+    # 2) translate so first-frame pelvis is at the world origin
+    # ---------------------------------------------------------------------
+    joints_cur, _ = get_smplx_joints(
+        np.concatenate([orang_new.astype(np.float32), rest.astype(np.float32)], axis=1),
+        betas,
+        trans_new,
+        gender,
+        num_betas=len(betas),
+    )
+    r_cur = joints_cur[:, 0, :]  # pelvis trajectory
+
+    forward0 = estimate_forward_from_joints(joints_cur[0].astype(np.float64))
+    yaw = np.arctan2(-forward0[0], forward0[2])
+    R_face = Rotation.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
+
+    # Update global orientation with final yaw rotation.
+    orang_final = _leftmul_rotvec(orang_new, R_face)
+
+    # Target pelvis after final yaw rotation (around first-frame pelvis pivot).
+    p0_cur = r_cur[0].astype(np.float64)
+    r_target_face = (R_face @ (r_cur - p0_cur[None, :]).T).T + p0_cur[None, :]
+
+    # Recompute local pelvis with updated orientation, then solve translations.
+    poses_face = np.concatenate([orang_final, rest], axis=1).astype(np.float32)
+    joints_local_face, _ = get_smplx_joints(
+        poses_face,
+        betas,
+        np.zeros_like(trans_new, dtype=np.float32),
+        gender,
+        num_betas=len(betas),
+    )
+    r_local_face = joints_local_face[:, 0, :]
+    trans_final = (r_target_face - r_local_face).astype(np.float32)
+
+    # Apply the same final yaw to object poses and translations.
+    obj_angles_final_dict = {}
+    obj_trans_final_dict = {}
+    for obj_part_name, obj_angles in obj_angles_new_dict.items():
+        obj_trans = obj_trans_new_dict[obj_part_name]
+        obj_angles_final = _leftmul_rotvec(obj_angles, R_face)
+        obj_trans_final = (R_face @ (obj_trans - r_cur).T).T + r_target_face
+        obj_angles_final_dict[obj_part_name] = obj_angles_final.astype(np.float32)
+        obj_trans_final_dict[obj_part_name] = obj_trans_final.astype(np.float32)
+
+    # Shift sequence so first-frame pelvis is at origin.
+    center_shift = r_target_face[0].astype(np.float32)
+    trans_final = trans_final - center_shift[None, :]
+    for obj_part_name in obj_trans_final_dict:
+        obj_trans_final_dict[obj_part_name] = obj_trans_final_dict[obj_part_name] - center_shift[None, :]
+
+    # Ground alignment should happen after final canonicalization.
+    poses_final = np.concatenate([orang_final.astype(np.float32), rest.astype(np.float32)], axis=1)
+    _, verts_final = get_smplx_joints(
+        poses_final,
+        betas,
+        trans_final,
+        gender,
+        num_betas=len(betas),
+    )
+    min_y_h = float(verts_final[0, :, 1].min())
+
     # Shift up so min_y >= 0
     shift_y = max(0.0, -min_y_h)
     if shift_y > 0:
         dy = np.array([0.0, shift_y, 0.0], dtype=np.float32)
-        trans_new = trans_new + dy[None, :]
-        for obj_part_name in obj_trans_new_dict:
-            obj_trans_new_dict[obj_part_name] = obj_trans_new_dict[obj_part_name] + dy[None, :]
-    
+        trans_final = trans_final + dy[None, :]
+        for obj_part_name in obj_trans_final_dict:
+            obj_trans_final_dict[obj_part_name] = obj_trans_final_dict[obj_part_name] + dy[None, :]
+
     # Combine new poses
-    poses_new = np.concatenate([orang_new.astype(np.float32), rest.astype(np.float32)], axis=1)
+    poses_new = np.concatenate([orang_final.astype(np.float32), rest.astype(np.float32)], axis=1)
     
-    return poses_new, trans_new, obj_angles_new_dict, obj_trans_new_dict
+    return poses_new, trans_final, obj_angles_final_dict, obj_trans_final_dict
 
 
 def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
