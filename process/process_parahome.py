@@ -4,14 +4,17 @@ import shutil
 import json
 import pickle
 import argparse
+import re
 import numpy as np
 import torch
 from scipy.spatial.transform import Rotation
 from pathlib import Path
 from datetime import datetime
 import smplx
+import spacy
 from multiprocessing import Pool, cpu_count, set_start_method
 from functools import partial
+from typing import Dict, List, Sequence
 
 # Set multiprocessing start method to 'spawn' for CUDA compatibility
 try:
@@ -20,6 +23,45 @@ except RuntimeError:
     pass  # Already set
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+_NLP = None
+
+
+def _get_nlp():
+    global _NLP
+    if _NLP is None:
+        _NLP = spacy.load("en_core_web_sm")
+    return _NLP
+
+
+def build_text_sentence(texts: Sequence[str]) -> str:
+    cleaned = [t.strip().rstrip(".") for t in texts if t and t.strip()]
+    if not cleaned:
+        return ""
+    if len(cleaned) == 1:
+        return f"{cleaned[0]}."
+    return f"{', '.join(cleaned[:-1])}, and {cleaned[-1]}."
+
+
+def build_pos_token_string(sentence: str) -> str:
+    sentence = sentence.replace("-", "")
+    doc = _get_nlp()(sentence)
+    tokens = []
+    for token in doc:
+        word = token.text
+        if not word.isalpha():
+            continue
+        if token.pos_ in {"NOUN", "VERB"} and word.lower() != "left":
+            out = token.lemma_
+        else:
+            out = word
+        tokens.append(f"{out.lower()}/{token.pos_}")
+    return " ".join(tokens)
+
+
+def build_text_row(texts: Sequence[str]) -> str:
+    sentence = build_text_sentence(texts)
+    pos_tokens = build_pos_token_string(sentence) if sentence else ""
+    return f"{sentence}#{pos_tokens}#0.0#0.0"
 
 # ==================== Gravity Transformation Utilities ====================
 
@@ -526,7 +568,206 @@ def process_single_sequence(seq_dir, output_root, verbose=False):
         return (seq_name, False, str(e))
 
 
-def copy_scan_directories(scan_source_dir, objects_target_dir):
+# ==================== Split Sequence Utilities ====================
+def get_object_name_from_filename(filename: str) -> str:
+    name = filename.replace(".npz", "")
+    if name.startswith("object_"):
+        name = name[7:]
+    name = re.sub(r"_(base|part1|part2)$", "", name)
+    return name
+
+
+def map_annotation_item_to_object_name(item_name: str) -> str:
+    item_mapping = {
+        "cabinet": "sink",
+        "cutting board": "cuttingboard",
+        "gas stove": "gasstove",
+        "pot lid": "potlid",
+        "trash can": "trashbin",
+        "washing machine": "washingmachine",
+        "dining table": "diningtable",
+        "table": "diningtable",
+    }
+    normalized = item_name.lower().strip()
+    if normalized in item_mapping:
+        return item_mapping[normalized]
+    return normalized.replace(" ", "").lower()
+
+
+def get_all_object_names_from_annotation(annotation_text: str, annot2item_dict: Dict[str, List[str]]) -> List[str]:
+    if annotation_text not in annot2item_dict:
+        print(f"    Warning: Annotation '{annotation_text}' not found in annot2item.json")
+        return ["unknown"]
+    annotation_items = annot2item_dict[annotation_text]
+    if not annotation_items:
+        return ["unknown"]
+    return [map_annotation_item_to_object_name(item) for item in annotation_items]
+
+
+def parse_annotation_sections(annotations: Dict[str, str]) -> List[Dict[str, object]]:
+    sections = []
+    for frame_range, annotation_text in annotations.items():
+        start_frame, end_frame = map(int, frame_range.split())
+        sections.append({"start": start_frame, "end": end_frame, "text": annotation_text})
+    sections.sort(key=lambda x: int(x["start"]))
+    return sections
+
+
+def should_merge_with_next(
+    current_section: Dict[str, object],
+    next_section: Dict[str, object],
+    annot2item_dict: Dict[str, List[str]],
+    min_frames: int = 200,
+) -> bool:
+    current_len = int(current_section["end"]) - int(current_section["start"])
+    if current_len < min_frames:
+        return True
+    current_objects = set(get_all_object_names_from_annotation(str(current_section["text"]), annot2item_dict))
+    next_objects = set(get_all_object_names_from_annotation(str(next_section["text"]), annot2item_dict))
+    return len(current_objects.intersection(next_objects)) > 0
+
+
+def merge_sections(
+    sections: List[Dict[str, object]],
+    annot2item_dict: Dict[str, List[str]],
+    min_frames: int = 200,
+    max_frames: int = 400,
+) -> List[Dict[str, object]]:
+    if not sections:
+        return []
+    merged = []
+    i = 0
+    while i < len(sections):
+        group = [sections[i]]
+        j = i
+        while j < len(sections) - 1:
+            proposed_start = int(group[0]["start"])
+            proposed_end = int(sections[j + 1]["end"])
+            proposed_len = proposed_end - proposed_start
+            if proposed_len > max_frames:
+                break
+            if should_merge_with_next(sections[j], sections[j + 1], annot2item_dict, min_frames):
+                group.append(sections[j + 1])
+                j += 1
+            else:
+                break
+        merged.append(
+            {
+                "start": int(group[0]["start"]),
+                "end": int(group[-1]["end"]),
+                "texts": [str(s["text"]) for s in group],
+            }
+        )
+        i = j + 1
+    return merged
+
+
+def ordered_unique(items: Sequence[str]) -> List[str]:
+    seen = set()
+    out = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
+def split_npz_file(npz_path: Path, start_frame: int, end_frame: int, output_path: Path) -> None:
+    with np.load(npz_path, allow_pickle=True) as data:
+        sliced_data = {}
+        for key in data.keys():
+            value = data[key]
+            if isinstance(value, np.ndarray) and len(value.shape) >= 1 and key in ["poses", "trans", "angles", "arti"]:
+                if start_frame < len(value) and end_frame <= len(value):
+                    sliced_data[key] = value[start_frame:end_frame]
+                elif start_frame < len(value):
+                    sliced_data[key] = value[start_frame:]
+                else:
+                    shape = list(value.shape)
+                    shape[0] = 0
+                    sliced_data[key] = np.empty(shape, dtype=value.dtype)
+            else:
+                sliced_data[key] = value
+    np.savez(output_path, **sliced_data)
+
+
+def resolve_annot2item_path(data_root: Path, script_dir: Path, cli_path: str) -> Path:
+    if cli_path:
+        return Path(cli_path)
+    candidates = [
+        data_root / "raw" / "annot2item.json",
+        script_dir.parent.parent / "parahome2interact" / "data" / "parahome" / "raw" / "annot2item.json",
+        script_dir.parent.parent / "ParaHome" / "data" / "annot2item.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        "annot2item.json not found. Provide --annot2item_path or place it under "
+        f"{data_root / 'raw' / 'annot2item.json'}"
+    )
+
+
+def split_single_parahome_sequence(
+    sequence_dir: Path,
+    annotation_path: Path,
+    annot2item_dict: Dict[str, List[str]],
+    split_output_root: Path,
+    min_frames: int,
+    max_frames: int,
+    verbose: bool = False,
+) -> int:
+    if not annotation_path.exists():
+        if verbose:
+            print(f"  Warning: missing annotation file: {annotation_path}")
+        return 0
+
+    with open(annotation_path, "r") as f:
+        annotations = json.load(f)
+    sections = parse_annotation_sections(annotations)
+    merged_sequences = merge_sections(sections, annot2item_dict, min_frames=min_frames, max_frames=max_frames)
+
+    npz_files = list(sequence_dir.glob("*.npz"))
+    seq_name = sequence_dir.name
+    created = 0
+
+    for seq in merged_sequences:
+        start_frame = int(seq["start"])
+        end_frame = int(seq["end"])
+        texts = list(seq["texts"])
+
+        all_objects = []
+        for text in texts:
+            all_objects.extend(get_all_object_names_from_annotation(text, annot2item_dict))
+        object_names = ordered_unique(all_objects)
+        objects_str = "_".join(object_names)
+
+        dir_name = f"{seq_name}_{objects_str}_{start_frame:04d}_{end_frame:04d}"
+        output_dir = split_output_root / dir_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        keep_objects = set(object_names)
+        for npz_file in npz_files:
+            if npz_file.name == "human.npz":
+                pass
+            elif npz_file.name.startswith("object_"):
+                obj_name = get_object_name_from_filename(npz_file.name)
+                if obj_name not in keep_objects:
+                    continue
+            else:
+                continue
+
+            split_npz_file(npz_file, start_frame, end_frame, output_dir / npz_file.name)
+
+        text_row = build_text_row(texts)
+        with open(output_dir / "text.txt", "w", encoding="utf-8") as f:
+            f.write(text_row)
+        created += 1
+
+    return created
+
+
+def copy_scan_directories(scan_source_dir, objects_target_dir, verbose=False):
     """
     Copy all .obj files from data/parahome/raw/scan/{object_name}/simplified/ 
     to data/parahome/objects/{object_name}/ (preserving filenames).
@@ -600,7 +841,7 @@ def copy_scan_directories(scan_source_dir, objects_target_dir):
         
         total_copied += copied
         total_skipped += skipped
-    if args.verbose:
+    if verbose:
         print(f"\nScan copy complete: {total_copied} files copied, {total_skipped} skipped, {not_found} objects not found")
 
 
@@ -610,7 +851,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This script processes the ParaHome dataset by:
-1. Converting all sequences from data/parahome/raw/smplx_seq to data/parahome/sequences
+1. Converting all sequences from data/parahome/raw/smplx_seq to data/parahome/sequences_canonical
 2. Copying scan directories from data/parahome/raw/scan to data/parahome/objects
 
 The conversion includes gravity transformation to align with interact's coordinate system (+Y up).
@@ -643,6 +884,24 @@ Examples:
         default=None,
         help="Number of parallel workers (default: CPU count)"
     )
+    parser.add_argument(
+        "--annot2item_path",
+        type=str,
+        default="",
+        help="Optional path to annot2item.json. Auto-resolved if not provided.",
+    )
+    parser.add_argument(
+        "--split_min_frames",
+        type=int,
+        default=200,
+        help="Minimum split segment length for merged annotations.",
+    )
+    parser.add_argument(
+        "--split_max_frames",
+        type=int,
+        default=400,
+        help="Maximum split segment length for merged annotations.",
+    )
     
     args = parser.parse_args()
     
@@ -658,15 +917,21 @@ Examples:
     
     smplx_seq_dir = data_root / "raw" / "smplx_seq"
     output_root = data_root / "sequences"
+    split_output_root = data_root / "sequences_canonical"
+    annotation_seq_root = data_root / "raw" / "seq"
     scan_source_dir = data_root / "raw" / "scan"
     objects_target_dir = data_root / "objects"
+    annot2item_path = resolve_annot2item_path(data_root, script_dir, args.annot2item_path)
     print("="*60)
     print("ParaHome Dataset Processing")
     print("="*60)
     print(f"SMPL-X sequences: {smplx_seq_dir}")
     print(f"Output sequences: {output_root}")
+    print(f"Split output sequences: {split_output_root}")
     print(f"Scan source: {scan_source_dir}")
     print(f"Objects target: {objects_target_dir}")
+    print(f"Annotation root: {annotation_seq_root}")
+    print(f"annot2item path: {annot2item_path}")
     print()
     
     # ==================== Part 1: Convert Sequences ====================
@@ -748,7 +1013,51 @@ Examples:
     
     # ==================== Part 2: Copy Scan Directories ====================
     
-    copy_scan_directories(scan_source_dir, objects_target_dir)
+    copy_scan_directories(scan_source_dir, objects_target_dir, verbose=args.verbose)
+
+    # ==================== Part 3: Split Sequences by Text Annotations ====================
+    if output_root.exists():
+        split_output_root.mkdir(parents=True, exist_ok=True)
+        with open(annot2item_path, "r") as f:
+            annot2item_dict = json.load(f)
+
+        created_total = 0
+        split_failed = 0
+        removed_full_total = 0
+        seq_dirs = sorted([d for d in output_root.iterdir() if d.is_dir() and d.name.startswith("s")])
+        for seq_dir in seq_dirs:
+            annotation_path = annotation_seq_root / seq_dir.name / "text_annotation.json"
+            try:
+                created = split_single_parahome_sequence(
+                    sequence_dir=seq_dir,
+                    annotation_path=annotation_path,
+                    annot2item_dict=annot2item_dict,
+                    split_output_root=split_output_root,
+                    min_frames=args.split_min_frames,
+                    max_frames=args.split_max_frames,
+                    verbose=args.verbose,
+                )
+                created_total += created
+                if created > 0:
+                    shutil.rmtree(seq_dir)
+                    removed_full_total += 1
+                    if args.verbose:
+                        print(f"  Removed full sequence dir: {seq_dir}")
+                elif args.verbose:
+                    print(f"  Kept full sequence dir (no split created): {seq_dir}")
+                if args.verbose:
+                    print(f"  {seq_dir.name}: created {created} split sequence(s)")
+            except Exception as e:
+                split_failed += 1
+                print(f"  ✗ Split failed for {seq_dir.name}: {e}")
+
+        print(
+            f"\nSplit complete: {created_total} sequences created, "
+            f"{split_failed} failed, {removed_full_total} full sequence dirs removed"
+        )
+        if output_root.exists():
+            shutil.rmtree(output_root)
+            print(f"Removed generated full-sequence root: {output_root}")
 
 
 

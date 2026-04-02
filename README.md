@@ -409,19 +409,25 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     ├── parahome
     │   ├── objects
     │   │   └── object_name
-    │   │       └── base.obj
-    │   └── sequences
+    │   │       ├── base.obj
+    │   │       └── part1.obj
+    │   └── sequences_canonical
     │       └── id
     │           ├── human.npz
-    │           └── object_{object_name}_{part}.npz
+    │           ├── object_{object_name}_{part}.npz
+    │           └── text.txt
     ├── arctic
         ├── objects
         │   └── object_name
-        │       └── base.obj
-        └── sequences
+        │       ├── top.obj
+        │       ├── bottom.obj
+        │       └── mesh.obj
+        └── sequences_canonical
             └── id
                 ├── human.npz
-                └── object.npz
+                ├── object.npz
+                └── text.txt
+
     
     ```
     
