@@ -10,6 +10,8 @@ import os.path as op
 import numpy as np
 import torch
 import json
+import re
+import spacy
 import trimesh
 import shutil
 from glob import glob
@@ -17,16 +19,314 @@ from scipy.spatial.transform import Rotation as R
 import smplx
 from object_tensors import ObjectTensors
 from preprocess_dataset import construct_loader
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 to_cpu = lambda tensor: tensor.detach().cpu()
 
 MODEL_PATH = './models'
+DESC_PATTERN = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s+([^,]+),\s*(.+?)\s*$")
 SMPLX_MODEL_P = {
     "male": "./models/smplx/SMPLX_MALE.npz",
     "female": "./models/smplx/SMPLX_FEMALE.npz",
     "neutral": "./models/smplx/SMPLX_NEUTRAL.npz",
 }
+_NLP: Optional[object] = None
+
+
+def _get_nlp():
+    global _NLP
+    if _NLP is None:
+        _NLP = spacy.load("en_core_web_sm")
+    return _NLP
+
+
+@dataclass(frozen=True)
+class Annotation:
+    start: int
+    end: int
+    motion: str
+    hand: str
+
+
+def parse_description(path: Path) -> List[Annotation]:
+    annotations: List[Annotation] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        match = DESC_PATTERN.match(line)
+        if not match:
+            raise ValueError(f"Invalid annotation line in {path}: {raw_line!r}")
+        start, end = int(match.group(1)), int(match.group(2))
+        motion = match.group(3).strip()
+        hand = match.group(4).strip()
+        if end < start:
+            raise ValueError(f"End < start in {path}: {raw_line!r}")
+        annotations.append(Annotation(start=start, end=end, motion=motion, hand=hand))
+    if not annotations:
+        raise ValueError(f"No annotations found in {path}")
+    return annotations
+
+
+def merge_intervals(intervals: Sequence[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    if not intervals:
+        return []
+    merged: List[Tuple[int, int]] = []
+    for start, end in sorted(intervals):
+        if not merged or start > merged[-1][1] + 1:
+            merged.append((start, end))
+        else:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+    return merged
+
+
+def choose_best_cut(
+    start_frame: int,
+    candidate_cuts: Sequence[int],
+    min_len: int,
+    max_len: int,
+    target_len: int,
+) -> int:
+    valid: List[int] = []
+    for cut in candidate_cuts:
+        seg_len = cut - start_frame + 1
+        if min_len <= seg_len <= max_len:
+            valid.append(cut)
+    if not valid:
+        return -1
+    return min(valid, key=lambda c: (abs((c - start_frame + 1) - target_len), c))
+
+
+def compute_chunk_ranges(
+    frame_count: int,
+    annotations: Sequence[Annotation],
+    min_len: int,
+    max_len: int,
+    target_len: int,
+) -> List[Tuple[int, int]]:
+    if frame_count < min_len:
+        return [(0, frame_count - 1)]
+
+    intervals = [(a.start, a.end) for a in annotations]
+    clusters = merge_intervals(intervals)
+    preferred_cuts = sorted(
+        {
+            cluster_start - 1
+            for cluster_start, _ in clusters[1:]
+            if 0 <= cluster_start - 1 < frame_count - 1
+        }
+    )
+    safe_cuts = sorted(
+        {
+            a.end
+            for a in annotations
+            if 0 <= a.end < frame_count - 1
+        }
+        | set(preferred_cuts)
+        | {frame_count - 1}
+    )
+
+    ranges: List[Tuple[int, int]] = []
+    start = 0
+    idx = 0
+    while start < frame_count:
+        if frame_count - start <= max_len:
+            ranges.append((start, frame_count - 1))
+            break
+
+        while idx < len(preferred_cuts) and preferred_cuts[idx] < start:
+            idx += 1
+
+        local_preferred: List[int] = []
+        scan = idx
+        while scan < len(preferred_cuts):
+            cut = preferred_cuts[scan]
+            seg_len = cut - start + 1
+            if seg_len > max_len:
+                break
+            if seg_len >= min_len:
+                local_preferred.append(cut)
+            scan += 1
+
+        cut = choose_best_cut(start, local_preferred, min_len, max_len, target_len)
+        if cut < 0:
+            local_safe = [c for c in safe_cuts if start + min_len - 1 <= c <= start + max_len - 1]
+            cut = choose_best_cut(start, local_safe, min_len, max_len, target_len)
+            if cut < 0:
+                cut = min(start + max_len - 1, frame_count - 1)
+
+        ranges.append((start, cut))
+        start = cut + 1
+
+    if len(ranges) >= 2 and (ranges[-1][1] - ranges[-1][0] + 1) < min_len:
+        prev_start, _ = ranges[-2]
+        tail_end = ranges[-1][1]
+        candidates = [
+            c
+            for c in safe_cuts
+            if prev_start + min_len - 1 <= c <= prev_start + max_len - 1
+            and min_len <= (tail_end - (c + 1) + 1) <= max_len
+        ]
+        if candidates:
+            best = min(candidates, key=lambda c: abs((c - prev_start + 1) - target_len))
+            ranges[-2] = (prev_start, best)
+            ranges[-1] = (best + 1, tail_end)
+
+    out: List[Tuple[int, int]] = []
+    for start, end in ranges:
+        if not out:
+            out.append((start, end))
+            continue
+        length = end - start + 1
+        if length < min_len:
+            prev_start, _ = out[-1]
+            if (end - prev_start + 1) <= max_len:
+                out[-1] = (prev_start, end)
+            else:
+                out.append((start, end))
+        else:
+            out.append((start, end))
+    return out
+
+
+def slice_npz(data: Dict[str, np.ndarray], start: int, end: int) -> Dict[str, np.ndarray]:
+    out: Dict[str, np.ndarray] = {}
+    for key, value in data.items():
+        if isinstance(value, np.ndarray) and value.ndim >= 1 and value.shape[0] >= end + 1:
+            out[key] = value[start : end + 1]
+        else:
+            out[key] = value
+    return out
+
+
+def build_text_lines(
+    annotations: Sequence[Annotation],
+    seq_name: str,
+    chunk_start: int,
+    chunk_end: int,
+) -> List[str]:
+    object_name = seq_name.split("_", 2)[1] if "_" in seq_name else "object"
+    selected: List[Annotation] = []
+    for ann in annotations:
+        if ann.end < chunk_start or ann.start > chunk_end:
+            continue
+        selected.append(ann)
+
+    both_by_motion: Dict[str, List[Tuple[int, int]]] = {}
+    for ann in selected:
+        if ann.hand.strip().lower() == "both hands":
+            both_by_motion.setdefault(ann.motion.lower(), []).append((ann.start, ann.end))
+
+    filtered: List[Annotation] = []
+    for ann in selected:
+        hand = ann.hand.strip().lower()
+        if hand == "both hands":
+            filtered.append(ann)
+            continue
+
+        suppress = False
+        for b_start, b_end in both_by_motion.get(ann.motion.lower(), []):
+            overlaps = not (ann.end < b_start or ann.start > b_end)
+            if overlaps:
+                suppress = True
+                break
+        if not suppress:
+            filtered.append(ann)
+
+    lines: List[str] = []
+    for ann in filtered:
+        lines.append(f"{ann.motion} {object_name} with {ann.hand}")
+    return lines
+
+
+def build_sentence_for_chunk(lines: Sequence[str]) -> str:
+    if not lines:
+        return ""
+    if len(lines) == 1:
+        return f"{lines[0]}."
+    return f"{', '.join(lines[:-1])}, and {lines[-1]}."
+
+
+def build_token_pos_string(sentence: str) -> str:
+    sentence = sentence.replace("-", "")
+    doc = _get_nlp()(sentence)
+    tokens: List[str] = []
+    for token in doc:
+        word = token.text
+        if not word.isalpha():
+            continue
+        if token.pos_ in {"NOUN", "VERB"} and word.lower() != "left":
+            out = token.lemma_
+        else:
+            out = word
+        tokens.append(f"{out.lower()}/{token.pos_}")
+    return " ".join(tokens)
+
+
+def sequence_to_description_path(description_root: Path, seq_name: str) -> Path:
+    parts = seq_name.split("_", 1)
+    if len(parts) != 2:
+        raise ValueError(f"Unexpected sequence directory name: {seq_name}")
+    subject, action_name = parts
+    return description_root / subject / action_name / "description.txt"
+
+
+def split_sequence_outputs(
+    sequence_dir: Path,
+    description_root: Path,
+    split_output_root: Path,
+    min_len: int = 200,
+    max_len: int = 400,
+    target_len: int = 300,
+) -> None:
+    seq_name = sequence_dir.name
+    desc_path = sequence_to_description_path(description_root, seq_name)
+    if not desc_path.exists():
+        print(f"[WARN] Missing description: {seq_name} -> {desc_path}")
+        return
+
+    human_path = sequence_dir / "human.npz"
+    object_path = sequence_dir / "object.npz"
+    if not human_path.exists() or not object_path.exists():
+        print(f"[WARN] Missing npz files in: {sequence_dir}")
+        return
+
+    annotations = parse_description(desc_path)
+    with np.load(human_path, allow_pickle=True) as human_npz, np.load(object_path, allow_pickle=True) as object_npz:
+        human_data = {k: human_npz[k] for k in human_npz.files}
+        object_data = {k: object_npz[k] for k in object_npz.files}
+
+    if "poses" not in human_data:
+        raise ValueError(f"'poses' key missing in {human_path}")
+    frame_count = int(human_data["poses"].shape[0])
+    if frame_count <= 0:
+        raise ValueError(f"Invalid frame count in {human_path}: {frame_count}")
+
+    ranges = compute_chunk_ranges(
+        frame_count=frame_count,
+        annotations=annotations,
+        min_len=min_len,
+        max_len=max_len,
+        target_len=target_len,
+    )
+
+    for start, end in ranges:
+        sub_name = f"{seq_name}_{start}"
+        out_dir = split_output_root / sub_name
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        np.savez(out_dir / "human.npz", **slice_npz(human_data, start, end))
+        np.savez(out_dir / "object.npz", **slice_npz(object_data, start, end))
+        lines = build_text_lines(annotations, seq_name, start, end)
+        sentence = build_sentence_for_chunk(lines)
+        pos_tokens = build_token_pos_string(sentence)
+        text_row = f"{sentence}#{pos_tokens}#0.0#0.0"
+        (out_dir / "text.txt").write_text(text_row, encoding="utf-8")
+
+    split_str = ", ".join([f"{s}-{e}" for s, e in ranges])
 
 # ============ Part 1: arctic_to_inter utilities ============
 def build_smplx(batch_size, gender, vtemplate):
@@ -100,7 +400,7 @@ def process_seq_params_direct(mano_p, dev, statcams, layers):
     with torch.no_grad():
         sid, seqname = mano_p.split("/")[-2:]
         seqname = seqname.replace(".mano.npy", "")
-        out_root = f"./data/arctic/sequences/{sid}/{seqname}"
+        out_root = f"./data/arctic/sequences_canonical/{sid}/{seqname}"
         os.makedirs(out_root, exist_ok=True)
 
         loader = construct_loader(mano_p)
@@ -411,6 +711,9 @@ def scale_object_files(input_dir, output_dir, scale_factor=0.001):
 # ============ Main processing logic ============
 def main():
     dev = "cuda:0" if torch.cuda.is_available() else "cpu"
+    description_root = Path("./data/arctic/description")
+    canonical_output_root = Path("./data/arctic/sequences_canonical")
+    canonical_output_root.mkdir(parents=True, exist_ok=True)
     
     # Load metadata
     with open(f"./data/arctic/raw/meta/misc.json", "r") as f:
@@ -448,15 +751,22 @@ def main():
             human_out, object_out = transform_sequence_to_interact(H, O, subject_id=subject_id)
         
         # Save to data/arctic/sequences
-        output_dir = os.path.join("./data/arctic/sequences", subject_id + "_" + seqname)
+        output_dir = os.path.join(str(canonical_output_root), subject_id + "_" + seqname)
         os.makedirs(output_dir, exist_ok=True)
         np.savez(os.path.join(output_dir, "human.npz"), **human_out)
         np.savez(os.path.join(output_dir, "object.npz"), **object_out)
+        split_sequence_outputs(
+            sequence_dir=Path(output_dir),
+            description_root=description_root,
+            split_output_root=canonical_output_root,
+        )
+        # Keep only split chunks in sequences_canonical.
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
         
         # Delete intermediate files
         if os.path.exists(out_root):
             shutil.rmtree(out_root)
-            # Also remove parent directory if it's empty
             parent_dir = os.path.dirname(out_root)
             if os.path.exists(parent_dir) and not os.listdir(parent_dir):
                 os.rmdir(parent_dir)
