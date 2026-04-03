@@ -107,17 +107,46 @@ def closest_axis_unit(v):
 def estimate_forward_from_joints(joints_frame0):
     """Estimate human forward direction from first-frame joints (horizontal plane)."""
     up = np.array([0.0, 1.0, 0.0], dtype=np.float64)
-    # SMPL-X joints: left/right shoulder = 16/17, left/right hip = 1/2.
-    right_vec = joints_frame0[17] - joints_frame0[16]
-    if np.linalg.norm(right_vec) < 1e-6:
-        right_vec = joints_frame0[2] - joints_frame0[1]
-    right_vec[1] = 0.0
-    if np.linalg.norm(right_vec) < 1e-6:
-        return np.array([0.0, 0.0, 1.0], dtype=np.float64)
 
-    right_vec = _normalize(right_vec).reshape(3,)
-    forward = np.cross(right_vec, up)
+    # Primary estimate from collar directions around the spine joint:
+    # - (3 -> 14) points to body right, so facing is +90 deg around +Y.
+    # - (3 -> 13) points to body left, so facing is -90 deg around +Y.
+    spine = joints_frame0[3]
+    right_collar_vec = joints_frame0[14] - spine
+    left_collar_vec = joints_frame0[13] - spine
+    right_collar_vec[1] = 0.0
+    left_collar_vec[1] = 0.0
+
+    forward_candidates = []
+    if np.linalg.norm(right_collar_vec) >= 1e-6:
+        right_collar_vec = _normalize(right_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(right_collar_vec, up))
+    if np.linalg.norm(left_collar_vec) >= 1e-6:
+        left_collar_vec = _normalize(left_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(up, left_collar_vec))
+
+    if len(forward_candidates) > 0:
+        forward = np.sum(np.asarray(forward_candidates), axis=0)
+    else:
+        # Fallback to shoulder/hip based estimate when collar vectors are degenerate.
+        # SMPL-X joints: left/right shoulder = 16/17, left/right hip = 1/2.
+        right_vec = joints_frame0[17] - joints_frame0[16]
+        if np.linalg.norm(right_vec) < 1e-6:
+            right_vec = joints_frame0[2] - joints_frame0[1]
+        right_vec[1] = 0.0
+        if np.linalg.norm(right_vec) < 1e-6:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+
+        right_vec = _normalize(right_vec).reshape(3,)
+        forward = np.cross(right_vec, up)
+
     forward[1] = 0.0
+    if np.linalg.norm(forward) < 1e-6:
+        if len(forward_candidates) > 0:
+            forward = forward_candidates[0]
+            forward[1] = 0.0
+        else:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
     if np.linalg.norm(forward) < 1e-6:
         return np.array([0.0, 0.0, 1.0], dtype=np.float64)
     return _normalize(forward).reshape(3,)
@@ -304,7 +333,7 @@ def apply_gravity_transformation(poses, betas, trans, gender, obj_angles_dict, o
     
     # ---------------------------------------------------------------------
     # Final canonicalization:
-    # 1) rotate around +Y so first-frame facing direction aligns to +Z
+    # 1) rotate around +Y so first-frame facing direction aligns to -Z
     # 2) translate so first-frame pelvis is at the world origin
     # ---------------------------------------------------------------------
     joints_cur, _ = get_smplx_joints(
@@ -317,7 +346,8 @@ def apply_gravity_transformation(poses, betas, trans, gender, obj_angles_dict, o
     r_cur = joints_cur[:, 0, :]  # pelvis trajectory
 
     forward0 = estimate_forward_from_joints(joints_cur[0].astype(np.float64))
-    yaw = np.arctan2(-forward0[0], forward0[2])
+    # Canonicalize facing to -Z (180 deg opposite of +Z target).
+    yaw = np.arctan2(forward0[0], -forward0[2])
     R_face = Rotation.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
 
     # Update global orientation with final yaw rotation.
@@ -756,6 +786,88 @@ def split_npz_file(npz_path: Path, start_frame: int, end_frame: int, output_path
     np.savez(output_path, **sliced_data)
 
 
+def _to_gender_str(gender_value) -> str:
+    if isinstance(gender_value, np.ndarray):
+        if gender_value.shape == ():
+            return str(gender_value.item())
+        if gender_value.size > 0:
+            return str(gender_value.reshape(-1)[0])
+        return "neutral"
+    return str(gender_value)
+
+
+def canonicalize_split_sequence_first_frame_to_plus_z(split_dir: Path) -> None:
+    human_path = split_dir / "human.npz"
+    if not human_path.exists():
+        return
+
+    with np.load(human_path, allow_pickle=True) as human_npz:
+        human_data = {k: human_npz[k] for k in human_npz.files}
+
+    poses = human_data.get("poses", None)
+    trans = human_data.get("trans", None)
+    betas = human_data.get("betas", None)
+    gender_raw = human_data.get("gender", "neutral")
+    if poses is None or trans is None or betas is None or len(poses) == 0:
+        return
+
+    gender = _to_gender_str(gender_raw)
+    rest = poses[:, 3:]
+    orang = poses[:, :3]
+
+    joints_cur, _ = get_smplx_joints(
+        poses,
+        betas,
+        trans,
+        gender,
+        num_betas=len(betas),
+    )
+    r_cur = joints_cur[:, 0, :]
+    forward0 = estimate_forward_from_joints(joints_cur[0].astype(np.float64))
+    # Canonicalize facing to -Z (180 deg opposite of +Z target).
+    yaw = np.arctan2(forward0[0], -forward0[2])
+    if abs(yaw) < 1e-8:
+        return
+
+    R_face = Rotation.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
+    orang_face = _leftmul_rotvec(orang, R_face)
+
+    p0_cur = r_cur[0].astype(np.float64)
+    r_target_face = (R_face @ (r_cur - p0_cur[None, :]).T).T + p0_cur[None, :]
+
+    poses_face = np.concatenate([orang_face, rest], axis=1).astype(np.float32)
+    joints_local_face, _ = get_smplx_joints(
+        poses_face,
+        betas,
+        np.zeros_like(trans, dtype=np.float32),
+        gender,
+        num_betas=len(betas),
+    )
+    r_local_face = joints_local_face[:, 0, :]
+    trans_face = (r_target_face - r_local_face).astype(np.float32)
+
+    human_out = {
+        "poses": poses_face,
+        "betas": betas,
+        "trans": trans_face,
+        "gender": gender_raw,
+    }
+    np.savez(human_path, **human_out)
+
+    object_npz_paths = sorted(split_dir.glob("object_*.npz"))
+    for obj_path in object_npz_paths:
+        with np.load(obj_path, allow_pickle=True) as obj_npz:
+            obj_data = {k: obj_npz[k] for k in obj_npz.files}
+        if "angles" not in obj_data or "trans" not in obj_data:
+            np.savez(obj_path, **obj_data)
+            continue
+        obj_angles = obj_data["angles"]
+        obj_trans = obj_data["trans"]
+        obj_data["angles"] = _leftmul_rotvec(obj_angles, R_face).astype(np.float32)
+        obj_data["trans"] = ((R_face @ (obj_trans - r_cur).T).T + r_target_face).astype(np.float32)
+        np.savez(obj_path, **obj_data)
+
+
 def resolve_annot2item_path(data_root: Path, script_dir: Path, cli_path: str) -> Path:
     if cli_path:
         return Path(cli_path)
@@ -827,6 +939,7 @@ def split_single_parahome_sequence(
         text_row = build_text_row(texts)
         with open(output_dir / "text.txt", "w", encoding="utf-8") as f:
             f.write(text_row)
+        canonicalize_split_sequence_first_frame_to_plus_z(output_dir)
         created += 1
 
     return created

@@ -312,14 +312,22 @@ def split_sequence_outputs(
         max_len=max_len,
         target_len=target_len,
     )
+    subject_id = seq_name.split("_", 1)[0]
 
     for start, end in ranges:
         sub_name = f"{seq_name}_{start}"
         out_dir = split_output_root / sub_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        np.savez(out_dir / "human.npz", **slice_npz(human_data, start, end))
-        np.savez(out_dir / "object.npz", **slice_npz(object_data, start, end))
+        human_chunk = slice_npz(human_data, start, end)
+        object_chunk = slice_npz(object_data, start, end)
+        human_chunk, object_chunk = canonicalize_chunk_first_frame_to_plus_z(
+            human_chunk,
+            object_chunk,
+            subject_id=subject_id,
+        )
+        np.savez(out_dir / "human.npz", **human_chunk)
+        np.savez(out_dir / "object.npz", **object_chunk)
         lines = build_text_lines(annotations, seq_name, start, end)
         sentence = build_sentence_for_chunk(lines)
         pos_tokens = build_token_pos_string(sentence)
@@ -518,6 +526,50 @@ def _normalize(v, eps=1e-8):
     n = np.linalg.norm(v, axis=-1, keepdims=True)
     return v / np.clip(n, eps, None)
 
+def estimate_forward_from_joints(joints_frame0):
+    up = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+
+    # Primary estimate from collar directions around the spine joint:
+    # - (3 -> 14) points to body right, so facing is +90 deg around +Y.
+    # - (3 -> 13) points to body left, so facing is -90 deg around +Y.
+    spine = joints_frame0[3]
+    right_collar_vec = joints_frame0[14] - spine
+    left_collar_vec = joints_frame0[13] - spine
+    right_collar_vec[1] = 0.0
+    left_collar_vec[1] = 0.0
+
+    forward_candidates = []
+    if np.linalg.norm(right_collar_vec) >= 1e-6:
+        right_collar_vec = _normalize(right_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(right_collar_vec, up))
+    if np.linalg.norm(left_collar_vec) >= 1e-6:
+        left_collar_vec = _normalize(left_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(up, left_collar_vec))
+
+    if len(forward_candidates) > 0:
+        forward = np.sum(np.asarray(forward_candidates), axis=0)
+    else:
+        # Fallback to shoulder/hip based estimate when collar vectors are degenerate.
+        right_vec = joints_frame0[17] - joints_frame0[16]
+        if np.linalg.norm(right_vec) < 1e-6:
+            right_vec = joints_frame0[2] - joints_frame0[1]
+        right_vec[1] = 0.0
+        if np.linalg.norm(right_vec) < 1e-6:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+        right_vec = _normalize(right_vec).reshape(3,)
+        forward = np.cross(right_vec, up)
+
+    forward[1] = 0.0
+    if np.linalg.norm(forward) < 1e-6:
+        if len(forward_candidates) > 0:
+            forward = forward_candidates[0]
+            forward[1] = 0.0
+        else:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+    if np.linalg.norm(forward) < 1e-6:
+        return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+    return _normalize(forward).reshape(3,)
+
 def _rot_between(a, b):
     a = _normalize(a).reshape(3,)
     b = _normalize(b).reshape(3,)
@@ -543,6 +595,72 @@ def closest_axis_unit(v):
                      [-1,0,0],[0,-1,0],[0,0,-1]], dtype=np.float64)
     dots = axes @ v
     return axes[np.argmax(np.abs(dots))]
+
+
+def canonicalize_chunk_first_frame_to_plus_z(
+    human_data: Dict[str, np.ndarray],
+    object_data: Dict[str, np.ndarray],
+    subject_id: str,
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    poses = human_data.get("poses", None)
+    trans = human_data.get("trans", None)
+    betas = human_data.get("betas", None)
+    if poses is None or trans is None or betas is None or poses.shape[0] == 0:
+        return human_data, object_data
+
+    gender_raw = human_data.get("gender", "neutral")
+    if isinstance(gender_raw, np.ndarray):
+        gender = gender_raw.item() if gender_raw.shape == () else str(gender_raw.reshape(-1)[0])
+    else:
+        gender = str(gender_raw)
+
+    _, joints_cur, _, _ = visualize_smpl_arctic(poses, betas, trans, gender, subject_id)
+    joints_cur_np = joints_cur.cpu().numpy()
+    r_cur = joints_cur_np[:, 0, :]
+
+    forward0 = estimate_forward_from_joints(joints_cur_np[0].astype(np.float64))
+    # Canonicalize facing to -Z (180 deg opposite of +Z target).
+    yaw = np.arctan2(forward0[0], -forward0[2])
+    if abs(yaw) < 1e-8:
+        return human_data, object_data
+
+    R_face = R.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
+    orang = poses[:, :3]
+    rest = poses[:, 3:]
+    orang_face = _leftmul_rotvec(orang, R_face)
+
+    p0_cur = r_cur[0].astype(np.float64)
+    r_target_face = (R_face @ (r_cur - p0_cur[None, :]).T).T + p0_cur[None, :]
+
+    poses_face = np.concatenate([orang_face, rest], axis=1).astype(np.float32)
+    T = poses.shape[0]
+    smpl_model = build_smpl_model(gender, subject_id)
+    smpl_out = smpl_model(
+        body_pose=torch.from_numpy(poses_face[:, 3:66]).float(),
+        global_orient=torch.from_numpy(poses_face[:, :3]).float(),
+        left_hand_pose=torch.from_numpy(poses_face[:, 66:111]).float(),
+        right_hand_pose=torch.from_numpy(poses_face[:, 111:156]).float(),
+        jaw_pose=torch.from_numpy(poses_face[:, 156:159]).float(),
+        leye_pose=torch.from_numpy(poses_face[:, 159:162]).float(),
+        reye_pose=torch.from_numpy(poses_face[:, 162:165]).float(),
+        expression=torch.zeros([T, 10]).float(),
+        betas=torch.from_numpy(betas[None, :]).repeat(T, 1).float(),
+        transl=torch.zeros([T, 3]).float(),
+    )
+    r_local_face = smpl_out.joints.detach().cpu().numpy()[:, 0, :]
+    trans_face = (r_target_face - r_local_face).astype(np.float32)
+
+    out_human = dict(human_data)
+    out_human["poses"] = poses_face
+    out_human["trans"] = trans_face
+
+    out_object = dict(object_data)
+    if "angles" in out_object:
+        out_object["angles"] = _leftmul_rotvec(out_object["angles"], R_face).astype(np.float32)
+    if "trans" in out_object:
+        out_object["trans"] = ((R_face @ (out_object["trans"] - r_cur).T).T + r_target_face).astype(np.float32)
+    return out_human, out_object
+
 
 def transform_sequence_to_interact(human_npz, obj_npz, pivot='pelvis0', subject_id="s01"):
     poses  = human_npz['poses']
