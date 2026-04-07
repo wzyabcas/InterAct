@@ -399,7 +399,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │   │   └── object_name
     │   │       ├── base.obj
     │   │       └── part1.obj
-    │   └── sequences_canonical
+    │   └── sequences
     │       └── id
     │           ├── human.npz
     │           ├── object_{object_name}_{part}.npz
@@ -410,7 +410,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
         │       ├── top.obj
         │       ├── bottom.obj
         │       └── mesh.obj
-        └── sequences_canonical
+        └── sequences
             └── id
                 ├── human.npz
                 ├── object.npz

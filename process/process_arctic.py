@@ -1,7 +1,7 @@
 """
 Combined script to process ARCTIC dataset:
 1. Convert raw sequences to InterAct format
-2. Transform to canonical coordinate system
+2. Split sequences into chunks
 3. Scale object files from mm to meters
 """
 
@@ -312,8 +312,6 @@ def split_sequence_outputs(
         max_len=max_len,
         target_len=target_len,
     )
-    subject_id = seq_name.split("_", 1)[0]
-
     for start, end in ranges:
         sub_name = f"{seq_name}_{start}"
         out_dir = split_output_root / sub_name
@@ -321,11 +319,6 @@ def split_sequence_outputs(
 
         human_chunk = slice_npz(human_data, start, end)
         object_chunk = slice_npz(object_data, start, end)
-        human_chunk, object_chunk = canonicalize_chunk_first_frame_to_plus_z(
-            human_chunk,
-            object_chunk,
-            subject_id=subject_id,
-        )
         np.savez(out_dir / "human.npz", **human_chunk)
         np.savez(out_dir / "object.npz", **object_chunk)
         lines = build_text_lines(annotations, seq_name, start, end)
@@ -408,7 +401,7 @@ def process_seq_params_direct(mano_p, dev, statcams, layers):
     with torch.no_grad():
         sid, seqname = mano_p.split("/")[-2:]
         seqname = seqname.replace(".mano.npy", "")
-        out_root = f"./data/arctic/sequences_canonical/{sid}/{seqname}"
+        out_root = f"./data/arctic/sequences/{sid}/{seqname}"
         os.makedirs(out_root, exist_ok=True)
 
         loader = construct_loader(mano_p)
@@ -424,6 +417,7 @@ def process_seq_params_direct(mano_p, dev, statcams, layers):
         obj_transl_seq = []
         obj_arti_seq = []
         qname_seq = []
+        rotation_x = R.from_euler("x", -np.pi / 2.0, degrees=False)
 
         for batch in loader:
             batch = thing2dev(batch, dev)
@@ -445,12 +439,66 @@ def process_seq_params_direct(mano_p, dev, statcams, layers):
             poses = _pack_poses_axis_angle(batch).detach().cpu().numpy()
             transl = batch["smplx_transl"].detach().cpu().numpy()
 
+            betas_model = getattr(smplx_m, "betas", None)
+            if betas_model is None:
+                num_betas = int(getattr(smplx_m, "num_betas", 10))
+                betas_batch = torch.zeros((B, num_betas), device=dev, dtype=batch["smplx_transl"].dtype)
+            else:
+                if betas_model.ndim == 1:
+                    betas_batch = betas_model[None, :].repeat(B, 1)
+                elif betas_model.shape[0] == B:
+                    betas_batch = betas_model
+                else:
+                    betas_batch = betas_model[:1].repeat(B, 1)
+            expression_batch = torch.zeros((B, 10), device=dev, dtype=batch["smplx_transl"].dtype)
+
+            smplx_output = smplx_m(
+                body_pose=batch["smplx_body_pose"],
+                global_orient=batch["smplx_global_orient"],
+                left_hand_pose=batch["smplx_left_hand_pose"],
+                right_hand_pose=batch["smplx_right_hand_pose"],
+                jaw_pose=batch["smplx_jaw_pose"],
+                leye_pose=batch["smplx_leye_pose"],
+                reye_pose=batch["smplx_reye_pose"],
+                transl=batch["smplx_transl"],
+                betas=betas_batch,
+                expression=expression_batch,
+            )
+            pelvis_old = smplx_output.joints[:, 0, :].detach().cpu().numpy()
+
+            # Match GRAB preprocessing: rotate all global motions by -90deg around X.
+            human_root = R.from_rotvec(poses[:, :3])
+            rotated_global_orient = (rotation_x * human_root).as_rotvec().astype(np.float32)
+            poses[:, :3] = rotated_global_orient
+            transl = rotation_x.apply(transl).astype(np.float32)
+
+            smplx_output_rot = smplx_m(
+                body_pose=batch["smplx_body_pose"],
+                global_orient=torch.from_numpy(rotated_global_orient).to(
+                    device=dev, dtype=batch["smplx_global_orient"].dtype
+                ),
+                left_hand_pose=batch["smplx_left_hand_pose"],
+                right_hand_pose=batch["smplx_right_hand_pose"],
+                jaw_pose=batch["smplx_jaw_pose"],
+                leye_pose=batch["smplx_leye_pose"],
+                reye_pose=batch["smplx_reye_pose"],
+                transl=torch.from_numpy(transl).to(device=dev, dtype=batch["smplx_transl"].dtype),
+                betas=betas_batch,
+                expression=expression_batch,
+            )
+            pelvis_new = smplx_output_rot.joints[:, 0, :].detach().cpu().numpy()
+
             poses_seq.append(poses)
             transl_seq.append(transl)
 
             obj_arti = batch["obj_arti"].view(-1, 1).detach().cpu().numpy()
             obj_grot = batch["obj_rot"].detach().cpu().numpy()
             obj_trans_m = (batch["obj_trans"] / 1000.0).detach().cpu().numpy()
+
+            obj_rots = R.from_rotvec(obj_grot)
+            obj_grot = (rotation_x * obj_rots).as_rotvec()
+            obj_trans_delta = rotation_x.apply(obj_trans_m - pelvis_old)
+            obj_trans_m = pelvis_new + obj_trans_delta
 
             obj_angles_seq.append(obj_grot)
             obj_transl_seq.append(obj_trans_m)
@@ -830,8 +878,8 @@ def scale_object_files(input_dir, output_dir, scale_factor=0.001):
 def main():
     dev = "cuda:0" if torch.cuda.is_available() else "cpu"
     description_root = Path("./data/arctic/description")
-    canonical_output_root = Path("./data/arctic/sequences_canonical")
-    canonical_output_root.mkdir(parents=True, exist_ok=True)
+    seg_output_root = Path("./data/arctic/sequences")
+    seg_output_root.mkdir(parents=True, exist_ok=True)
     
     # Load metadata
     with open(f"./data/arctic/raw/meta/misc.json", "r") as f:
@@ -861,24 +909,25 @@ def main():
         # Step 1: Process raw sequence (arctic_to_inter)
         out_root, subject_id, seqname = process_seq_params_direct(mano_p, dev, statcams, layers)
         
-        # Step 2: Transform to InterAct coordinate system
+        # Step 2: Build unsplit InterAct-format sequence and split it.
         human_path = os.path.join(out_root, "human.npz")
         object_path = os.path.join(out_root, "object.npz")
-        
-        with np.load(human_path, allow_pickle=True) as H, np.load(object_path, allow_pickle=True) as O:
-            human_out, object_out = transform_sequence_to_interact(H, O, subject_id=subject_id)
-        
-        # Save to data/arctic/sequences
-        output_dir = os.path.join(str(canonical_output_root), subject_id + "_" + seqname)
+
+        with np.load(human_path, allow_pickle=True) as H:
+            human_out = {k: H[k] for k in H.files}
+        with np.load(object_path, allow_pickle=True) as O:
+            object_out = {k: O[k] for k in O.files}
+
+        output_dir = os.path.join(str(seg_output_root), subject_id + "_" + seqname)
         os.makedirs(output_dir, exist_ok=True)
         np.savez(os.path.join(output_dir, "human.npz"), **human_out)
         np.savez(os.path.join(output_dir, "object.npz"), **object_out)
         split_sequence_outputs(
             sequence_dir=Path(output_dir),
             description_root=description_root,
-            split_output_root=canonical_output_root,
+            split_output_root=seg_output_root,
         )
-        # Keep only split chunks in sequences_canonical.
+        # Keep only split chunks in sequences_seg.
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         

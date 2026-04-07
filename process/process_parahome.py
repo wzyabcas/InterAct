@@ -487,6 +487,25 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
     # Ensure betas is 1D
     if betas.ndim > 1:
         betas = betas.flatten()
+
+    # Match ARCTIC preprocessing: rotate all global motions by -90deg around X.
+    rotation_matrix_x = Rotation.from_euler('x', -np.pi / 2.0, degrees=False)
+    joints_before_rot, _ = get_smplx_joints(poses, betas, transl, gender, num_betas=len(betas))
+    pelvis_before_rot = joints_before_rot[:, 0, :]
+
+    poses_transformed = poses.copy().astype(np.float32)
+    trans_transformed = rotation_matrix_x.apply(transl).astype(np.float32)
+    root_rot = Rotation.from_rotvec(poses_transformed[:, :3])
+    poses_transformed[:, :3] = (rotation_matrix_x * root_rot).as_rotvec().astype(np.float32)
+
+    joints_after_rot, _ = get_smplx_joints(
+        poses_transformed,
+        betas,
+        trans_transformed,
+        gender,
+        num_betas=len(betas),
+    )
+    pelvis_after_rot = joints_after_rot[:, 0, :]
     
     # ==================== Load Object Data ====================
     
@@ -504,9 +523,9 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
         # Still save human data
         human_output_path = os.path.join(output_dir, "human.npz")
         np.savez(human_output_path,
-                 poses=poses,
+                 poses=poses_transformed,
                  betas=betas,
-                 trans=transl,
+                 trans=trans_transformed,
                  gender=gender)
         return
     
@@ -522,9 +541,9 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
         # Still save human data
         human_output_path = os.path.join(output_dir, "human.npz")
         np.savez(human_output_path,
-                 poses=poses,
+                 poses=poses_transformed,
                  betas=betas,
-                 trans=transl,
+                 trans=trans_transformed,
                  gender=gender)
         return
     
@@ -584,14 +603,37 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
             obj_trans_dict[obj_part_key] = obj_trans
             obj_part_names.append(obj_part_key)
     
-    # ==================== Apply Gravity Transformation ====================
+    # Apply same X-axis rotation handling used in ARCTIC.
+    obj_angles_transformed = {}
+    obj_trans_transformed = {}
+    for obj_part_key, obj_angles in obj_angles_dict.items():
+        obj_trans = obj_trans_dict[obj_part_key]
+        obj_angles_out = obj_angles.copy().astype(np.float32)
+        obj_trans_out = obj_trans.copy().astype(np.float32)
+
+        n = min(
+            obj_angles_out.shape[0],
+            obj_trans_out.shape[0],
+            pelvis_before_rot.shape[0],
+            pelvis_after_rot.shape[0],
+        )
+
+        if n > 0:
+            obj_rots = Rotation.from_rotvec(obj_angles_out[:n])
+            obj_angles_out[:n] = (rotation_matrix_x * obj_rots).as_rotvec().astype(np.float32)
+            obj_trans_delta = rotation_matrix_x.apply(obj_trans_out[:n] - pelvis_before_rot[:n])
+            obj_trans_out[:n] = (pelvis_after_rot[:n] + obj_trans_delta).astype(np.float32)
+
+        if obj_angles_out.shape[0] > n:
+            extra_rots = Rotation.from_rotvec(obj_angles_out[n:])
+            obj_angles_out[n:] = (rotation_matrix_x * extra_rots).as_rotvec().astype(np.float32)
+        if obj_trans_out.shape[0] > n:
+            obj_trans_out[n:] = rotation_matrix_x.apply(obj_trans_out[n:]).astype(np.float32)
+
+        obj_angles_transformed[obj_part_key] = obj_angles_out
+        obj_trans_transformed[obj_part_key] = obj_trans_out
     
-    # Apply gravity transformation to align to interact coordinate system
-    poses_transformed, trans_transformed, obj_angles_transformed, obj_trans_transformed = apply_gravity_transformation(
-        poses, betas, transl, gender, obj_angles_dict, obj_trans_dict
-    )
-    
-    # ==================== Save Transformed Data ====================
+    # ==================== Save Processed Data ====================
     
     # Save human.npz
     human_output_path = os.path.join(output_dir, "human.npz")
@@ -939,7 +981,6 @@ def split_single_parahome_sequence(
         text_row = build_text_row(texts)
         with open(output_dir / "text.txt", "w", encoding="utf-8") as f:
             f.write(text_row)
-        canonicalize_split_sequence_first_frame_to_plus_z(output_dir)
         created += 1
 
     return created
@@ -1029,10 +1070,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This script processes the ParaHome dataset by:
-1. Converting all sequences from data/parahome/raw/smplx_seq to data/parahome/sequences_canonical
-2. Copying scan directories from data/parahome/raw/scan to data/parahome/objects
-
-The conversion includes gravity transformation to align with interact's coordinate system (+Y up).
+1. Converting all sequences from data/parahome/raw/smplx_seq to temporary full-sequence outputs
+2. Splitting converted sequences into data/parahome/sequences
+3. Copying scan directories from data/parahome/raw/scan to data/parahome/objects
 
 Examples:
   # Process sequentially (single thread)
@@ -1094,8 +1134,8 @@ Examples:
     data_root = script_dir / args.data_root
     
     smplx_seq_dir = data_root / "raw" / "smplx_seq"
-    output_root = data_root / "sequences"
-    split_output_root = data_root / "sequences_canonical"
+    output_root = data_root / "sequences_tmp"
+    split_output_root = data_root / "sequences"
     annotation_seq_root = data_root / "raw" / "seq"
     scan_source_dir = data_root / "raw" / "scan"
     objects_target_dir = data_root / "objects"
@@ -1104,7 +1144,7 @@ Examples:
     print("ParaHome Dataset Processing")
     print("="*60)
     print(f"SMPL-X sequences: {smplx_seq_dir}")
-    print(f"Output sequences: {output_root}")
+    print(f"Temporary full sequences: {output_root}")
     print(f"Split output sequences: {split_output_root}")
     print(f"Scan source: {scan_source_dir}")
     print(f"Objects target: {objects_target_dir}")
@@ -1201,7 +1241,6 @@ Examples:
 
         created_total = 0
         split_failed = 0
-        removed_full_total = 0
         seq_dirs = sorted([d for d in output_root.iterdir() if d.is_dir() and d.name.startswith("s")])
         for seq_dir in seq_dirs:
             annotation_path = annotation_seq_root / seq_dir.name / "text_annotation.json"
@@ -1218,11 +1257,10 @@ Examples:
                 created_total += created
                 if created > 0:
                     shutil.rmtree(seq_dir)
-                    removed_full_total += 1
                     if args.verbose:
-                        print(f"  Removed full sequence dir: {seq_dir}")
+                        print(f"  Removed temporary full sequence dir: {seq_dir}")
                 elif args.verbose:
-                    print(f"  Kept full sequence dir (no split created): {seq_dir}")
+                    print(f"  Kept temporary full sequence dir (no split created): {seq_dir}")
                 if args.verbose:
                     print(f"  {seq_dir.name}: created {created} split sequence(s)")
             except Exception as e:
@@ -1231,11 +1269,11 @@ Examples:
 
         print(
             f"\nSplit complete: {created_total} sequences created, "
-            f"{split_failed} failed, {removed_full_total} full sequence dirs removed"
+            f"{split_failed} failed"
         )
         if output_root.exists():
             shutil.rmtree(output_root)
-            print(f"Removed generated full-sequence root: {output_root}")
+            print(f"Removed temporary full-sequence root: {output_root}")
 
 
 
