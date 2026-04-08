@@ -104,6 +104,54 @@ def closest_axis_unit(v):
     return axes[np.argmax(np.abs(dots))]
 
 
+def estimate_forward_from_joints(joints_frame0):
+    """Estimate human forward direction from first-frame joints (horizontal plane)."""
+    up = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+
+    # Primary estimate from collar directions around the spine joint:
+    # - (3 -> 14) points to body right, so facing is +90 deg around +Y.
+    # - (3 -> 13) points to body left, so facing is -90 deg around +Y.
+    spine = joints_frame0[3]
+    right_collar_vec = joints_frame0[14] - spine
+    left_collar_vec = joints_frame0[13] - spine
+    right_collar_vec[1] = 0.0
+    left_collar_vec[1] = 0.0
+
+    forward_candidates = []
+    if np.linalg.norm(right_collar_vec) >= 1e-6:
+        right_collar_vec = _normalize(right_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(right_collar_vec, up))
+    if np.linalg.norm(left_collar_vec) >= 1e-6:
+        left_collar_vec = _normalize(left_collar_vec).reshape(3,)
+        forward_candidates.append(np.cross(up, left_collar_vec))
+
+    if len(forward_candidates) > 0:
+        forward = np.sum(np.asarray(forward_candidates), axis=0)
+    else:
+        # Fallback to shoulder/hip based estimate when collar vectors are degenerate.
+        # SMPL-X joints: left/right shoulder = 16/17, left/right hip = 1/2.
+        right_vec = joints_frame0[17] - joints_frame0[16]
+        if np.linalg.norm(right_vec) < 1e-6:
+            right_vec = joints_frame0[2] - joints_frame0[1]
+        right_vec[1] = 0.0
+        if np.linalg.norm(right_vec) < 1e-6:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+
+        right_vec = _normalize(right_vec).reshape(3,)
+        forward = np.cross(right_vec, up)
+
+    forward[1] = 0.0
+    if np.linalg.norm(forward) < 1e-6:
+        if len(forward_candidates) > 0:
+            forward = forward_candidates[0]
+            forward[1] = 0.0
+        else:
+            return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+    if np.linalg.norm(forward) < 1e-6:
+        return np.array([0.0, 0.0, 1.0], dtype=np.float64)
+    return _normalize(forward).reshape(3,)
+
+
 def build_smplx_model_parahome(gender, num_betas=20, model_path='models'):
     """Build SMPLX model for ParaHome."""
     smplx_model = smplx.create(
@@ -283,36 +331,83 @@ def apply_gravity_transformation(poses, betas, trans, gender, obj_angles_dict, o
         obj_angles_new_dict[obj_part_name] = obj_angles_new.astype(np.float32)
         obj_trans_new_dict[obj_part_name] = obj_trans_new.astype(np.float32)
     
-    # Get new vertices to find minimum Y
-    with torch.no_grad():
-        smpl_out_final = smpl_model(
-            body_pose=torch.from_numpy(body_pose_reshaped).float().to(device),
-            global_orient=torch.from_numpy(global_orient).float().to(device),
-            left_hand_pose=torch.from_numpy(lhand_pose_reshaped).float().to(device),
-            right_hand_pose=torch.from_numpy(rhand_pose_reshaped).float().to(device),
-            betas=torch.from_numpy(betas[None, :]).repeat(T, 1).float().to(device),
-            transl=torch.from_numpy(trans_new).float().to(device),
-            jaw_pose=torch.zeros([T, 3]).float().to(device),
-            leye_pose=torch.zeros([T, 3]).float().to(device),
-            reye_pose=torch.zeros([T, 3]).float().to(device),
-            expression=torch.zeros([T, 10]).float().to(device)
-        )
-    
-    verts_new = smpl_out_final.vertices.detach().cpu().numpy()
-    min_y_h = float(verts_new[0, :, 1].min())
-    
+    # ---------------------------------------------------------------------
+    # Final canonicalization:
+    # 1) rotate around +Y so first-frame facing direction aligns to -Z
+    # 2) translate so first-frame pelvis is at the world origin
+    # ---------------------------------------------------------------------
+    joints_cur, _ = get_smplx_joints(
+        np.concatenate([orang_new.astype(np.float32), rest.astype(np.float32)], axis=1),
+        betas,
+        trans_new,
+        gender,
+        num_betas=len(betas),
+    )
+    r_cur = joints_cur[:, 0, :]  # pelvis trajectory
+
+    forward0 = estimate_forward_from_joints(joints_cur[0].astype(np.float64))
+    # Canonicalize facing to -Z (180 deg opposite of +Z target).
+    yaw = np.arctan2(forward0[0], -forward0[2])
+    R_face = Rotation.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
+
+    # Update global orientation with final yaw rotation.
+    orang_final = _leftmul_rotvec(orang_new, R_face)
+
+    # Target pelvis after final yaw rotation (around first-frame pelvis pivot).
+    p0_cur = r_cur[0].astype(np.float64)
+    r_target_face = (R_face @ (r_cur - p0_cur[None, :]).T).T + p0_cur[None, :]
+
+    # Recompute local pelvis with updated orientation, then solve translations.
+    poses_face = np.concatenate([orang_final, rest], axis=1).astype(np.float32)
+    joints_local_face, _ = get_smplx_joints(
+        poses_face,
+        betas,
+        np.zeros_like(trans_new, dtype=np.float32),
+        gender,
+        num_betas=len(betas),
+    )
+    r_local_face = joints_local_face[:, 0, :]
+    trans_final = (r_target_face - r_local_face).astype(np.float32)
+
+    # Apply the same final yaw to object poses and translations.
+    obj_angles_final_dict = {}
+    obj_trans_final_dict = {}
+    for obj_part_name, obj_angles in obj_angles_new_dict.items():
+        obj_trans = obj_trans_new_dict[obj_part_name]
+        obj_angles_final = _leftmul_rotvec(obj_angles, R_face)
+        obj_trans_final = (R_face @ (obj_trans - r_cur).T).T + r_target_face
+        obj_angles_final_dict[obj_part_name] = obj_angles_final.astype(np.float32)
+        obj_trans_final_dict[obj_part_name] = obj_trans_final.astype(np.float32)
+
+    # Shift sequence so first-frame pelvis is at origin.
+    center_shift = r_target_face[0].astype(np.float32)
+    trans_final = trans_final - center_shift[None, :]
+    for obj_part_name in obj_trans_final_dict:
+        obj_trans_final_dict[obj_part_name] = obj_trans_final_dict[obj_part_name] - center_shift[None, :]
+
+    # Ground alignment should happen after final canonicalization.
+    poses_final = np.concatenate([orang_final.astype(np.float32), rest.astype(np.float32)], axis=1)
+    _, verts_final = get_smplx_joints(
+        poses_final,
+        betas,
+        trans_final,
+        gender,
+        num_betas=len(betas),
+    )
+    min_y_h = float(verts_final[0, :, 1].min())
+
     # Shift up so min_y >= 0
     shift_y = max(0.0, -min_y_h)
     if shift_y > 0:
         dy = np.array([0.0, shift_y, 0.0], dtype=np.float32)
-        trans_new = trans_new + dy[None, :]
-        for obj_part_name in obj_trans_new_dict:
-            obj_trans_new_dict[obj_part_name] = obj_trans_new_dict[obj_part_name] + dy[None, :]
-    
+        trans_final = trans_final + dy[None, :]
+        for obj_part_name in obj_trans_final_dict:
+            obj_trans_final_dict[obj_part_name] = obj_trans_final_dict[obj_part_name] + dy[None, :]
+
     # Combine new poses
-    poses_new = np.concatenate([orang_new.astype(np.float32), rest.astype(np.float32)], axis=1)
+    poses_new = np.concatenate([orang_final.astype(np.float32), rest.astype(np.float32)], axis=1)
     
-    return poses_new, trans_new, obj_angles_new_dict, obj_trans_new_dict
+    return poses_new, trans_final, obj_angles_final_dict, obj_trans_final_dict
 
 
 def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
@@ -392,6 +487,25 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
     # Ensure betas is 1D
     if betas.ndim > 1:
         betas = betas.flatten()
+
+    # Match ARCTIC preprocessing: rotate all global motions by -90deg around X.
+    rotation_matrix_x = Rotation.from_euler('x', -np.pi / 2.0, degrees=False)
+    joints_before_rot, _ = get_smplx_joints(poses, betas, transl, gender, num_betas=len(betas))
+    pelvis_before_rot = joints_before_rot[:, 0, :]
+
+    poses_transformed = poses.copy().astype(np.float32)
+    trans_transformed = rotation_matrix_x.apply(transl).astype(np.float32)
+    root_rot = Rotation.from_rotvec(poses_transformed[:, :3])
+    poses_transformed[:, :3] = (rotation_matrix_x * root_rot).as_rotvec().astype(np.float32)
+
+    joints_after_rot, _ = get_smplx_joints(
+        poses_transformed,
+        betas,
+        trans_transformed,
+        gender,
+        num_betas=len(betas),
+    )
+    pelvis_after_rot = joints_after_rot[:, 0, :]
     
     # ==================== Load Object Data ====================
     
@@ -409,9 +523,9 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
         # Still save human data
         human_output_path = os.path.join(output_dir, "human.npz")
         np.savez(human_output_path,
-                 poses=poses,
+                 poses=poses_transformed,
                  betas=betas,
-                 trans=transl,
+                 trans=trans_transformed,
                  gender=gender)
         return
     
@@ -427,9 +541,9 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
         # Still save human data
         human_output_path = os.path.join(output_dir, "human.npz")
         np.savez(human_output_path,
-                 poses=poses,
+                 poses=poses_transformed,
                  betas=betas,
-                 trans=transl,
+                 trans=trans_transformed,
                  gender=gender)
         return
     
@@ -489,14 +603,37 @@ def convert_parahome_to_interact(parahome_seq_root, output_dir, verbose=False):
             obj_trans_dict[obj_part_key] = obj_trans
             obj_part_names.append(obj_part_key)
     
-    # ==================== Apply Gravity Transformation ====================
+    # Apply same X-axis rotation handling used in ARCTIC.
+    obj_angles_transformed = {}
+    obj_trans_transformed = {}
+    for obj_part_key, obj_angles in obj_angles_dict.items():
+        obj_trans = obj_trans_dict[obj_part_key]
+        obj_angles_out = obj_angles.copy().astype(np.float32)
+        obj_trans_out = obj_trans.copy().astype(np.float32)
+
+        n = min(
+            obj_angles_out.shape[0],
+            obj_trans_out.shape[0],
+            pelvis_before_rot.shape[0],
+            pelvis_after_rot.shape[0],
+        )
+
+        if n > 0:
+            obj_rots = Rotation.from_rotvec(obj_angles_out[:n])
+            obj_angles_out[:n] = (rotation_matrix_x * obj_rots).as_rotvec().astype(np.float32)
+            obj_trans_delta = rotation_matrix_x.apply(obj_trans_out[:n] - pelvis_before_rot[:n])
+            obj_trans_out[:n] = (pelvis_after_rot[:n] + obj_trans_delta).astype(np.float32)
+
+        if obj_angles_out.shape[0] > n:
+            extra_rots = Rotation.from_rotvec(obj_angles_out[n:])
+            obj_angles_out[n:] = (rotation_matrix_x * extra_rots).as_rotvec().astype(np.float32)
+        if obj_trans_out.shape[0] > n:
+            obj_trans_out[n:] = rotation_matrix_x.apply(obj_trans_out[n:]).astype(np.float32)
+
+        obj_angles_transformed[obj_part_key] = obj_angles_out
+        obj_trans_transformed[obj_part_key] = obj_trans_out
     
-    # Apply gravity transformation to align to interact coordinate system
-    poses_transformed, trans_transformed, obj_angles_transformed, obj_trans_transformed = apply_gravity_transformation(
-        poses, betas, transl, gender, obj_angles_dict, obj_trans_dict
-    )
-    
-    # ==================== Save Transformed Data ====================
+    # ==================== Save Processed Data ====================
     
     # Save human.npz
     human_output_path = os.path.join(output_dir, "human.npz")
@@ -691,6 +828,88 @@ def split_npz_file(npz_path: Path, start_frame: int, end_frame: int, output_path
     np.savez(output_path, **sliced_data)
 
 
+def _to_gender_str(gender_value) -> str:
+    if isinstance(gender_value, np.ndarray):
+        if gender_value.shape == ():
+            return str(gender_value.item())
+        if gender_value.size > 0:
+            return str(gender_value.reshape(-1)[0])
+        return "neutral"
+    return str(gender_value)
+
+
+def canonicalize_split_sequence_first_frame_to_plus_z(split_dir: Path) -> None:
+    human_path = split_dir / "human.npz"
+    if not human_path.exists():
+        return
+
+    with np.load(human_path, allow_pickle=True) as human_npz:
+        human_data = {k: human_npz[k] for k in human_npz.files}
+
+    poses = human_data.get("poses", None)
+    trans = human_data.get("trans", None)
+    betas = human_data.get("betas", None)
+    gender_raw = human_data.get("gender", "neutral")
+    if poses is None or trans is None or betas is None or len(poses) == 0:
+        return
+
+    gender = _to_gender_str(gender_raw)
+    rest = poses[:, 3:]
+    orang = poses[:, :3]
+
+    joints_cur, _ = get_smplx_joints(
+        poses,
+        betas,
+        trans,
+        gender,
+        num_betas=len(betas),
+    )
+    r_cur = joints_cur[:, 0, :]
+    forward0 = estimate_forward_from_joints(joints_cur[0].astype(np.float64))
+    # Canonicalize facing to -Z (180 deg opposite of +Z target).
+    yaw = np.arctan2(forward0[0], -forward0[2])
+    if abs(yaw) < 1e-8:
+        return
+
+    R_face = Rotation.from_rotvec(np.array([0.0, yaw, 0.0], dtype=np.float64)).as_matrix()
+    orang_face = _leftmul_rotvec(orang, R_face)
+
+    p0_cur = r_cur[0].astype(np.float64)
+    r_target_face = (R_face @ (r_cur - p0_cur[None, :]).T).T + p0_cur[None, :]
+
+    poses_face = np.concatenate([orang_face, rest], axis=1).astype(np.float32)
+    joints_local_face, _ = get_smplx_joints(
+        poses_face,
+        betas,
+        np.zeros_like(trans, dtype=np.float32),
+        gender,
+        num_betas=len(betas),
+    )
+    r_local_face = joints_local_face[:, 0, :]
+    trans_face = (r_target_face - r_local_face).astype(np.float32)
+
+    human_out = {
+        "poses": poses_face,
+        "betas": betas,
+        "trans": trans_face,
+        "gender": gender_raw,
+    }
+    np.savez(human_path, **human_out)
+
+    object_npz_paths = sorted(split_dir.glob("object_*.npz"))
+    for obj_path in object_npz_paths:
+        with np.load(obj_path, allow_pickle=True) as obj_npz:
+            obj_data = {k: obj_npz[k] for k in obj_npz.files}
+        if "angles" not in obj_data or "trans" not in obj_data:
+            np.savez(obj_path, **obj_data)
+            continue
+        obj_angles = obj_data["angles"]
+        obj_trans = obj_data["trans"]
+        obj_data["angles"] = _leftmul_rotvec(obj_angles, R_face).astype(np.float32)
+        obj_data["trans"] = ((R_face @ (obj_trans - r_cur).T).T + r_target_face).astype(np.float32)
+        np.savez(obj_path, **obj_data)
+
+
 def resolve_annot2item_path(data_root: Path, script_dir: Path, cli_path: str) -> Path:
     if cli_path:
         return Path(cli_path)
@@ -851,10 +1070,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This script processes the ParaHome dataset by:
-1. Converting all sequences from data/parahome/raw/smplx_seq to data/parahome/sequences_canonical
-2. Copying scan directories from data/parahome/raw/scan to data/parahome/objects
-
-The conversion includes gravity transformation to align with interact's coordinate system (+Y up).
+1. Converting all sequences from data/parahome/raw/smplx_seq to temporary full-sequence outputs
+2. Splitting converted sequences into data/parahome/sequences
+3. Copying scan directories from data/parahome/raw/scan to data/parahome/objects
 
 Examples:
   # Process sequentially (single thread)
@@ -916,8 +1134,8 @@ Examples:
     data_root = script_dir / args.data_root
     
     smplx_seq_dir = data_root / "raw" / "smplx_seq"
-    output_root = data_root / "sequences"
-    split_output_root = data_root / "sequences_canonical"
+    output_root = data_root / "sequences_tmp"
+    split_output_root = data_root / "sequences"
     annotation_seq_root = data_root / "raw" / "seq"
     scan_source_dir = data_root / "raw" / "scan"
     objects_target_dir = data_root / "objects"
@@ -926,7 +1144,7 @@ Examples:
     print("ParaHome Dataset Processing")
     print("="*60)
     print(f"SMPL-X sequences: {smplx_seq_dir}")
-    print(f"Output sequences: {output_root}")
+    print(f"Temporary full sequences: {output_root}")
     print(f"Split output sequences: {split_output_root}")
     print(f"Scan source: {scan_source_dir}")
     print(f"Objects target: {objects_target_dir}")
@@ -1023,7 +1241,6 @@ Examples:
 
         created_total = 0
         split_failed = 0
-        removed_full_total = 0
         seq_dirs = sorted([d for d in output_root.iterdir() if d.is_dir() and d.name.startswith("s")])
         for seq_dir in seq_dirs:
             annotation_path = annotation_seq_root / seq_dir.name / "text_annotation.json"
@@ -1040,11 +1257,10 @@ Examples:
                 created_total += created
                 if created > 0:
                     shutil.rmtree(seq_dir)
-                    removed_full_total += 1
                     if args.verbose:
-                        print(f"  Removed full sequence dir: {seq_dir}")
+                        print(f"  Removed temporary full sequence dir: {seq_dir}")
                 elif args.verbose:
-                    print(f"  Kept full sequence dir (no split created): {seq_dir}")
+                    print(f"  Kept temporary full sequence dir (no split created): {seq_dir}")
                 if args.verbose:
                     print(f"  {seq_dir.name}: created {created} split sequence(s)")
             except Exception as e:
@@ -1053,11 +1269,11 @@ Examples:
 
         print(
             f"\nSplit complete: {created_total} sequences created, "
-            f"{split_failed} failed, {removed_full_total} full sequence dirs removed"
+            f"{split_failed} failed"
         )
         if output_root.exists():
             shutil.rmtree(output_root)
-            print(f"Removed generated full-sequence root: {output_root}")
+            print(f"Removed temporary full-sequence root: {output_root}")
 
 
 

@@ -411,7 +411,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   │   └── object_name
     │   │       ├── base.obj
     │   │       └── part1.obj
-    │   └── sequences_canonical
+    │   └── sequences
     │       └── id
     │           ├── human.npz
     │           ├── object_{object_name}_{part}.npz
@@ -422,7 +422,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
         │       ├── top.obj
         │       ├── bottom.obj
         │       └── mesh.obj
-        └── sequences_canonical
+        └── sequences
             └── id
                 ├── human.npz
                 ├── object.npz
