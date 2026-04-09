@@ -281,20 +281,24 @@ def split_sequence_outputs(
     min_len: int = 200,
     max_len: int = 400,
     target_len: int = 300,
-) -> None:
+) -> bool:
     seq_name = sequence_dir.name
     desc_path = sequence_to_description_path(description_root, seq_name)
     if not desc_path.exists():
         print(f"[WARN] Missing description: {seq_name} -> {desc_path}")
-        return
+        return False
 
     human_path = sequence_dir / "human.npz"
     object_path = sequence_dir / "object.npz"
     if not human_path.exists() or not object_path.exists():
         print(f"[WARN] Missing npz files in: {sequence_dir}")
-        return
+        return False
 
-    annotations = parse_description(desc_path)
+    try:
+        annotations = parse_description(desc_path)
+    except ValueError as exc:
+        print(f"[WARN] Invalid description: {seq_name} -> {desc_path} ({exc})")
+        return False
     with np.load(human_path, allow_pickle=True) as human_npz, np.load(object_path, allow_pickle=True) as object_npz:
         human_data = {k: human_npz[k] for k in human_npz.files}
         object_data = {k: object_npz[k] for k in object_npz.files}
@@ -328,6 +332,7 @@ def split_sequence_outputs(
         (out_dir / "text.txt").write_text(text_row, encoding="utf-8")
 
     split_str = ", ".join([f"{s}-{e}" for s, e in ranges])
+    return True
 
 # ============ Part 1: arctic_to_inter utilities ============
 def build_smplx(batch_size, gender, vtemplate):
@@ -922,13 +927,13 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
         np.savez(os.path.join(output_dir, "human.npz"), **human_out)
         np.savez(os.path.join(output_dir, "object.npz"), **object_out)
-        split_sequence_outputs(
+        did_split = split_sequence_outputs(
             sequence_dir=Path(output_dir),
             description_root=description_root,
             split_output_root=seg_output_root,
         )
-        # Keep only split chunks in sequences_seg.
-        if os.path.exists(output_dir):
+        # Keep unsplit only when description is missing; otherwise keep split chunks only.
+        if did_split and os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         
         # Delete intermediate files

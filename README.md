@@ -254,7 +254,8 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
 
   - **ParaHome**
 
-    Download ParaHome from [the project website](https://github.com/snuvclab/ParaHome)
+    Download ParaHome from [the project website](https://github.com/snuvclab/ParaHome). 
+    Download the `annot2item.json` from [the project repository](https://github.com/snuvclab/ParaHome/blob/535dada556536a54d8b3a5185f2a153e6e3ccbca/data/annot2item.json#L1). In `annot2item.json` and the `text_annotations.json` for each sequence, there will be motions interacting with "cabinet", but there is no cabinet mesh in the dataset. After validating with visualization, all motion sequnces involving object "cabinet" is actually interacting with object "sink", so the process script will treat cabinet as sink.
 
     Expected File Structure:
     ```bash
@@ -277,17 +278,17 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │       └── simplified
     │          └── base.obj
         ...
-    └── smplx_seq
-        ├── s1
-            ├── smplx_params.pkl
-            └── smplx_pose.pkl
-        ...
+    ├── smplx_seq
+    │   ├── s1
+    │       ├── smplx_params.pkl
+    │       └── smplx_pose.pkl
+    └── annot2item.json
     ```
   - **ARCTIC**
 
     Download raw sequences, and meta files from [the project website](https://github.com/zc-alexfan/arctic/blob/master/docs/data/README.md)
   
-    Download text annotations from [this project website](https://github.com/JunukCha/Text2HOI?tab=readme-ov-file)
+    Download text annotations from [this project website](https://github.com/JunukCha/Text2HOI?tab=readme-ov-file). The descriptions are labeled manually by this project. The motion sequences are split into sub-sequences with length 200-400 frames based on these descriptions. If a description is missing or unable to segment, the sequence will be processed but remain unsplit.
   
     Expected File Structure:
     ```bash
@@ -404,7 +405,7 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
     │           ├── human.npz
     │           ├── object_{object_name}_{part}.npz
     │           └── text.txt
-    ├── arctic
+    └── arctic
         ├── objects
         │   └── object_name
         │       ├── top.obj
@@ -415,6 +416,10 @@ The **GRAB**, **BEHAVE**, and **INTERCAP** datasets are available for academic r
                 ├── human.npz
                 ├── object.npz
                 └── text.txt
+
+    For dataset parahome involving multiple objects with mixing rigid objects each with a single part and articulated objects each with multiple parts, the transformation of every part of the object is stored independently as a object_{object_name}_{part}.npz file with keys `angles` for rotation, `trans` for translation, and name.
+
+    For dataset arctic involving articulated objects with bottom and top parts, each object transformation is stored in only one objet.npz file with keys `angles` for rotation, `trans` for translation, name, and `arti` for the relative rotation of the top part with respect to the bottom part of the object. Refer to the visualization/visualize_arctic.py code for usage of arti.
 
     
     ```
