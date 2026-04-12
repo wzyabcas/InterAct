@@ -111,7 +111,7 @@ if __name__ == "__main__":
     for dataset in datasets:
         print("Processing dataset:", dataset)
         dataset_path = os.path.join(data_root, dataset)
-        MOTION_PATH = os.path.join(dataset_path, 'sequences')
+        MOTION_PATH = os.path.join(dataset_path, 'sequences_seg')
         OBJECT_PATH = os.path.join(dataset_path, 'objects')
         if not os.path.isdir(MOTION_PATH) or not os.path.isdir(OBJECT_PATH):
             print(f"Skip dataset {dataset}: missing sequences or objects folder.")
