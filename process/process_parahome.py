@@ -1135,7 +1135,7 @@ Examples:
     
     smplx_seq_dir = data_root / "raw" / "smplx_seq"
     output_root = data_root / "sequences_tmp"
-    split_output_root = data_root / "sequences"
+    split_output_root = data_root / "sequences_seg"
     annotation_seq_root = data_root / "raw" / "seq"
     scan_source_dir = data_root / "raw" / "scan"
     objects_target_dir = data_root / "objects"

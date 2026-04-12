@@ -598,7 +598,7 @@ def process_dataset(dataset, dataset_path):
     """
     Processes all sequences in a given dataset.
     """
-    MOTION_PATH = os.path.join(dataset_path, 'sequences')
+    MOTION_PATH = os.path.join(dataset_path, 'sequences_seg')
     NEW_MOTION_PATH = os.path.join(dataset_path, 'sequences_canonical')
     OBJECT_PATH = os.path.join(dataset_path, 'objects')
     data_name = os.listdir(MOTION_PATH)

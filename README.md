@@ -375,7 +375,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   ├── objects
     │   │   └── object_name
     │   │       └── object_name.obj
-    │   └── sequences
+    │   └── sequences_seg
     │       └── id
     │           ├── human.npz
     │           ├── object.npz
@@ -384,7 +384,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   ├── objects
     │   │   └── object_name
     │   │       └── object_name.obj
-    │   └── sequences
+    │   └── sequences_seg
     │       └── id
     │           ├── human.npz
     │           ├── object.npz
@@ -393,7 +393,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   ├── objects
     │   │   └── object_name
     │   │       └── object_name.obj
-    │   └── sequences
+    │   └── sequences_seg
     │       └── id
     │           ├── human.npz
     │           ├── object.npz
@@ -402,7 +402,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   ├── objects
     │   │   └── object_name
     │   │       └── object_name.obj
-    │   └── sequences
+    │   └── sequences_seg
     │       └── id
     │           ├── human.npz
     │           ├── object.npz
@@ -412,7 +412,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
     │   │   └── object_name
     │   │       ├── base.obj
     │   │       └── part1.obj
-    │   └── sequences
+    │   └── sequences_seg
     │       └── id
     │           ├── human.npz
     │           ├── object_{object_name}_{part}.npz
@@ -423,7 +423,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for ac
         │       ├── top.obj
         │       ├── bottom.obj
         │       └── mesh.obj
-        └── sequences
+        └── sequences_seg
             └── id
                 ├── human.npz
                 ├── object.npz

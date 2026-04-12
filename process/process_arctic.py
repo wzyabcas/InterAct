@@ -883,7 +883,7 @@ def scale_object_files(input_dir, output_dir, scale_factor=0.001):
 def main():
     dev = "cuda:0" if torch.cuda.is_available() else "cpu"
     description_root = Path("./data/arctic/description")
-    seg_output_root = Path("./data/arctic/sequences")
+    seg_output_root = Path("./data/arctic/sequences_seg")
     seg_output_root.mkdir(parents=True, exist_ok=True)
     
     # Load metadata
