@@ -176,7 +176,6 @@ def _prepare_betas_for_model(betas, smpl_model):
         betas_arr = betas_arr[:target_betas]
     elif betas_arr.shape[0] < target_betas:
         betas_arr = np.pad(betas_arr, (0, target_betas - betas_arr.shape[0]), mode='constant')
-    print(betas_arr.shape)
     return betas_arr.astype(np.float32)
 
 ######################################## smplh 10 ########################################
@@ -302,7 +301,6 @@ def visualize_smpl(name, MOTION_PATH, model_type, num_betas, num_pca_comps=None,
         if model_type == 'smplh':
             smpl_model = smplh10[gender]
             model_betas = _prepare_betas_for_model(betas, smpl_model)
-            
             smplx_output = smpl_model(body_pose=torch.from_numpy(poses[:, 3:66]).float(),
                                 global_orient=torch.from_numpy(poses[:, :3]).float(),
                                 left_hand_pose=torch.from_numpy(poses[:, 66:111]).float(),
@@ -401,7 +399,7 @@ def visualize_grab(name, MOTION_PATH):
 
 
 if __name__ == "__main__":
-    datasets = ['parahome']
+    datasets = ['behave', 'intercap', 'omomo', 'grab', 'arctic', 'parahome']
     data_root = './data'
     for dataset in datasets:
         dataset_path = os.path.join(data_root, dataset)
