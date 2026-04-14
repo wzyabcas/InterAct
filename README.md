@@ -66,7 +66,6 @@
 - [x] Release HOI correction data V2
 - [ ] Release baseline constructions for the other HOI generative tasks
 - [ ] Release the dataset with unified SMPL representation
-- [ ] Release retargeted HOI dataset with unified human shape
 
 
 ## General Description
@@ -130,7 +129,7 @@ data
 
 ### 2. Process from scratch  
 
-The **GRAB**, **BEHAVE**, **INTERCAP**, **ARCTIC** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the processing code and annotations. Besides, we support **ParaHome** in addition to our original dataset. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
+The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic research under custom licenses from the Max Planck Institute for Intelligent Systems. Note that we do not distribute the original motion data—instead, we provide the processing code and annotations. Besides, we support **ParaHome** and **ARCTIC** in addition to our original dataset. To download these datasets, please visit their respective websites and agree to the terms of their licenses:
 
 <details>
   <summary>Licenses</summary>
