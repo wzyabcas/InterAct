@@ -76,7 +76,7 @@ We introduce InterAct, a comprehensive large-scale 3D human-object interaction (
 
 The InterAct dataset is consolidated according to the licenses of its original data sources. For data approved for redistribution, direct download links are provided; for others, we supply processing code to convert the raw data into our standardized format.
 
-Please follow the steps below to download, process, and organize the data.
+Please follow the steps below to download, process, and organize the data. And make sure to review the [license](./InterAct_license.pdf) before use.
 
 ### 1. Request authorization
 
