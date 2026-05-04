@@ -684,6 +684,31 @@ For details on data loading, replaying, and training with the processed data, pl
   ```
   </details>
 
+## Human2Object
+
+<details>
+   <summary>Training</summary>
+
+  To train on our benchmark, execute the following steps:
+
+  ```
+  cd human2object
+  bash ./scripts/train.sh
+  ```
+
+  </details>
+
+  <details>
+  <summary>Evaluation</summary>
+
+  To evaluate on our benchmark, execute the following steps
+
+  ```
+  cd human2object
+  bash ./scripts/eval_metrics.sh
+  ```
+  </details>
+
 
 ## Visualization
 

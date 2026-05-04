@@ -1,0 +1,23 @@
+python trainer_full_body_manip_diffusion.py \
+--window=120 \
+--batch_size=64 \
+--project="./{project}" \
+--exp_name="{exp_name}" \
+--wandb_pj_name="{wandb_pj_name}" \
+--entity="{entity}" \
+--data_root_folder="{data_root_folder}" \
+--multi_task \
+--use_all_data \
+--bps_dim 256 \
+--use_bps_info \
+--use_human_contact_dist \
+--w_humanContactDist 0.5 \
+--token_obj_geom \
+--load_last_ckpt \
+--use_quat \
+--split_train_val \
+--save_and_sample_every 10000 \
+--n_dec_layers 4 \
+--d_k 256 \
+--d_v 256 \
+--d_model 512 
