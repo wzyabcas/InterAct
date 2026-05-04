@@ -50,6 +50,7 @@
 - [2025-12-07] 🚀 Release the data conversion pipeline for bringing InterAct into simulation, specifically for [InterMimic](https://github.com/Sirui-Xu/InterMimic) use.
 - [2026-02-03] Release the pipeline for object-to-human.
 - [2025-02-03] Release corrected OMOMO data V2.
+- [2026-05-03] Release the pipeline for human-to-object.
 
 
 ## TODO
@@ -64,7 +65,7 @@
 - [x] Release the pipeline for constructing simulation ready data 
 - [x] Release baseline constructions for Object to Human
 - [x] Release HOI correction data V2
-- [ ] Release baseline constructions for the other HOI generative tasks
+- [x] Release baseline constructions for the other HOI generative tasks
 - [ ] Release the dataset with unified SMPL representation
 
 
