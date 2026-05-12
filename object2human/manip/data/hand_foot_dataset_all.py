@@ -299,8 +299,9 @@ class MarkerManipDataset(Dataset):
                 self.data_dict[s_idx]['obj_name'] = str(object_data['name'])
                 self.data_dict[s_idx]['obj_trans'] = object_data['trans']
                 self.data_dict[s_idx]['obj_angles'] = object_data['angles']
-                self.data_dict[s_idx]['markers'] = np.load(os.path.join(seq_path, "markers.npy"))
-                self.data_dict[s_idx]['motion'] = np.load(os.path.join(seq_path, "motion.npy"))
+                motion = np.load(os.path.join(seq_path, "motion.npy"))
+                self.data_dict[s_idx]['markers'] = motion[:, :77*3].reshape(-1, 77, 3)  # T x 77 x 3
+                self.data_dict[s_idx]['motion'] = motion
                 self.data_dict[s_idx]['seq_name'] = seq
                 self.data_dict[s_idx]['seq_len'] = len(self.data_dict[s_idx]['motion']) 
                 self.data_dict[s_idx]['dataset'] = dataset
