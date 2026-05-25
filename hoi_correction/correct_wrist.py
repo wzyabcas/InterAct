@@ -80,8 +80,8 @@ def load_models():
     
     # SMPLH 16
     SMPLH_PATH = MODEL_PATH+'/smplh'
-    surface_model_male_fname = os.path.join(SMPLH_PATH,'female', "model.npz")
-    surface_model_female_fname = os.path.join(SMPLH_PATH, "male","model.npz")
+    surface_model_male_fname = os.path.join(SMPLH_PATH,'male', "model.npz")
+    surface_model_female_fname = os.path.join(SMPLH_PATH, "female","model.npz")
     surface_model_neutral_fname = os.path.join(SMPLH_PATH, "neutral", "model.npz")
     dmpl_fname = None
     num_dmpls = None 
