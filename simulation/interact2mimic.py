@@ -2,9 +2,18 @@ import sys
 import os
 import shutil
 sys.path.append(os.getcwd())
+import numpy as np
+
+# IsaacGym still imports deprecated NumPy aliases on newer NumPy versions.
+if not hasattr(np, "float"):
+    np.float = float
+if not hasattr(np, "int"):
+    np.int = int
+if not hasattr(np, "bool"):
+    np.bool = bool
+
 from phc.utils import torch_utils
 import torch
-import numpy as np
 from scipy.spatial.transform import Rotation as sRot
 from uhc.smpllib.smpl_mujoco import SMPLH_BONE_ORDER_NAMES, SMPLH_SEGMENT, smplx_vert_segmentation, smpl_vert_segmentation
 from uhc.smpllib.smpl_local_robot import SMPL_Robot as LocalRobot
@@ -27,6 +36,102 @@ import argparse
 from copy import copy
 
 MODEL_PATH = "../models"
+CONTACT_VERTEX_POINTS = 8192
+CONTACT_SURFACE_POINTS = 8192
+
+
+def _object_min_axis_over_time(points, obj_angles, obj_trans, axis):
+    """Exact per-frame object min coordinate without materializing all vertices."""
+    points = np.asarray(points, dtype=np.float64)
+    obj_trans = np.asarray(obj_trans, dtype=np.float64)
+    rots = sRot.from_rotvec(np.asarray(obj_angles, dtype=np.float64)).as_matrix()
+
+    mins = np.empty((rots.shape[0],), dtype=np.float64)
+    for t in range(rots.shape[0]):
+        # Row-vector convention used below: world = local @ R.T + trans.
+        mins[t] = np.min(points @ rots[t, axis, :] + obj_trans[t, axis])
+    return mins
+
+
+def _object_min_axis_single_frame(points, obj_quat_xyzw, obj_trans, axis, frame=0):
+    """Exact object min coordinate for one final-frame pose."""
+    points = np.asarray(points, dtype=np.float64)
+    rots = sRot.from_quat(np.asarray(obj_quat_xyzw, dtype=np.float64)).as_matrix()
+    trans = np.asarray(obj_trans, dtype=np.float64)
+    return float(np.min(points @ rots[frame, axis, :] + trans[frame, axis]))
+
+
+def deterministic_surface_sample(mesh_obj, target_points=CONTACT_SURFACE_POINTS):
+    """Deterministic area-weighted surface samples with no RNG dependence."""
+    triangles = np.asarray(mesh_obj.triangles, dtype=np.float64)
+    areas = np.asarray(mesh_obj.area_faces, dtype=np.float64)
+    valid = np.isfinite(triangles).all(axis=(1, 2)) & np.isfinite(areas) & (areas > 1e-12)
+
+    if not np.any(valid):
+        vertices = np.asarray(mesh_obj.vertices, dtype=np.float64)
+        if vertices.shape[0] <= target_points:
+            return vertices.copy()
+        idx = np.linspace(0, vertices.shape[0] - 1, target_points, dtype=np.int64)
+        return vertices[idx].copy()
+
+    triangles = triangles[valid]
+    areas = areas[valid]
+    quotas = areas / areas.sum() * int(target_points)
+    counts = np.floor(quotas).astype(np.int64)
+    remaining = int(target_points) - int(counts.sum())
+    if remaining > 0:
+        order = np.argsort(-(quotas - counts), kind="mergesort")
+        counts[order[:remaining]] += 1
+
+    points = []
+    golden = 0.6180339887498949
+    for tri, count in zip(triangles, counts):
+        if count <= 0:
+            continue
+        if count == 1:
+            points.append(tri.mean(axis=0, keepdims=True))
+            continue
+
+        j = np.arange(count, dtype=np.float64)
+        u = (j + 0.5) / count
+        v = ((j + 0.5) * golden) % 1.0
+        sqrt_u = np.sqrt(u)
+        bary0 = 1.0 - sqrt_u
+        bary1 = sqrt_u * (1.0 - v)
+        bary2 = sqrt_u * v
+        points.append(
+            bary0[:, None] * tri[0]
+            + bary1[:, None] * tri[1]
+            + bary2[:, None] * tri[2]
+        )
+
+    return np.concatenate(points, axis=0).astype(np.float64, copy=False)
+
+
+def deterministic_vertex_sample(mesh_obj, target_points=CONTACT_VERTEX_POINTS):
+    """Deterministically select mesh vertices to preserve edges, corners, and thin parts."""
+    vertices = np.asarray(mesh_obj.vertices, dtype=np.float64)
+    vertices = vertices[np.isfinite(vertices).all(axis=1)]
+    if vertices.shape[0] <= target_points:
+        return vertices.copy()
+
+    # Stable spatial ordering avoids depending on OBJ vertex order while keeping
+    # the selected vertices deterministic across runs.
+    order = np.lexsort((vertices[:, 2], vertices[:, 1], vertices[:, 0]))
+    idx_in_order = np.linspace(0, vertices.shape[0] - 1, int(target_points), dtype=np.int64)
+    return vertices[order[idx_in_order]].copy()
+
+
+def deterministic_contact_points(
+    mesh_obj,
+    vertex_points=CONTACT_VERTEX_POINTS,
+    surface_points=CONTACT_SURFACE_POINTS,
+):
+    """Combine vertex points and surface samples for stable contact-distance queries."""
+    vertices = deterministic_vertex_sample(mesh_obj, vertex_points)
+    surface = deterministic_surface_sample(mesh_obj, surface_points)
+    points = np.concatenate([vertices, surface], axis=0)
+    return np.unique(points, axis=0)
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -307,8 +412,8 @@ smplx12 = {'male': smplx12_model_male, 'female': smplx12_model_female, 'neutral'
 
 ######################################## smplh 16 ########################################
 SMPLH_PATH = MODEL_PATH+'/smplh'
-surface_model_male_fname = os.path.join(SMPLH_PATH,'female', "model.npz")
-surface_model_female_fname = os.path.join(SMPLH_PATH, "male","model.npz")
+surface_model_male_fname = os.path.join(SMPLH_PATH,'male', "model.npz")
+surface_model_female_fname = os.path.join(SMPLH_PATH, "female","model.npz")
 surface_model_neutral_fname = os.path.join(SMPLH_PATH, "neutral", "model.npz")
 dmpl_fname = None
 num_dmpls = None 
@@ -592,28 +697,29 @@ def main(args):
         mesh_obj = trimesh.load(os.path.join(OBJECT_PATH, f"{obj_name}/{obj_name}.obj"), force='mesh')
 
 
-        obj_verts = mesh_obj.vertices
-        center = np.mean(obj_verts, 0)
-
+        object_ground_points = np.asarray(mesh_obj.vertices, dtype=np.float64)
+        object_contact_points = deterministic_contact_points(
+            mesh_obj,
+            vertex_points=CONTACT_VERTEX_POINTS,
+            surface_points=CONTACT_SURFACE_POINTS,
+        )
         obj_verts_all = []
 
-        object_points, object_faces = mesh_obj.sample(1024, return_index=True)
-
         for t in range(pose_aa.shape[0]):
-            # print(record['smplfit_params'])
-            angle, trans = obj_angles[t], obj_trans[t]
-            rot = sRot.from_rotvec(angle).as_matrix()
-
-            mesh_obj_v = np.matmul(object_points, rot.T) + trans
+            rot = sRot.from_rotvec(obj_angles[t]).as_matrix()
+            mesh_obj_v = object_contact_points @ rot.T + obj_trans[t]
             obj_verts_all.append(mesh_obj_v)
 
         obj_verts_all = torch.from_numpy(np.array(obj_verts_all)).to(device)
         vertices = vertices.to(device)
         joints = joints.to(device)
 
-        ground_height = min(torch.min(obj_verts_all[:, :, 1]), torch.min(vertices[:, :, 1]))
+        object_min_y = torch.from_numpy(
+            _object_min_axis_over_time(object_ground_points, obj_angles, obj_trans, axis=1)
+        ).to(device=device, dtype=vertices.dtype)
+        ground_height = torch.minimum(object_min_y.min(), vertices[:, :, 1].min())
 
-        is_ground = (torch.min(obj_verts_all[:, :, 1], dim=1)[0] - ground_height) < 0.1
+        is_ground = (object_min_y - ground_height) < 0.1
         
         is_static = torch.from_numpy(obj_trans[1:] - obj_trans[:-1]).norm(dim=1) < 0.005
         is_static = torch.cat([is_static[0:1], is_static]).to(device)
@@ -647,7 +753,7 @@ def main(args):
         # Reuse the pre-computed distances from GPU
         # dis shape: [T, V, O], min_dis_v shape: [T, V]
         is_contact = is_contact.double()  # Convert to double for later use
-        ground_height_gpu = torch.tensor(ground_height, device=device)
+        ground_height_gpu = ground_height
         
         for t in range(pose_aa.shape[0]):
             # Reuse pre-computed min_dis_v for this frame
@@ -858,10 +964,17 @@ def main(args):
             data = torch.zeros((B, 331+52+52*4))
 
             obj_new_trans = trans + torch.from_numpy(obj_trans_delta).double()
-            obj_verts = (object_points)[None, ...]
-            obj_verts = torch.from_numpy(np.matmul(obj_verts, np.transpose(sRot.from_quat(obj_angles_quat).as_matrix(), (0, 2, 1)))) + obj_new_trans[:, None, :]
-            
-            diff = obj_verts[:1, ..., -1].min(dim=-1)[0].min()
+            diff = torch.tensor(
+                _object_min_axis_single_frame(
+                    object_ground_points,
+                    obj_angles_quat,
+                    obj_new_trans.detach().cpu().numpy(),
+                    axis=2,
+                    frame=0,
+                ),
+                dtype=obj_new_trans.dtype,
+                device=obj_new_trans.device,
+            )
 
             if diff < 0:
                 obj_new_trans[..., -1] -= diff
