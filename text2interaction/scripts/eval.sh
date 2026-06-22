@@ -5,4 +5,5 @@ python -m eval.eval_marker_representation \
 --layers 8 \
 --latent_dim 512 \
 --dataset interact \
+--batch_size 64 \
 --debug 0
