@@ -526,7 +526,7 @@ def main() -> None:
                 exp_cfg, batch, body_model, def_matrix, mask_ids,var_dict_original)
             var_dict['gender'] = np.array(gender)
             os.makedirs(tbase,exist_ok=True)
-            np.save(os.path.join(tbase,'human.npz'),**var_dict)
+            np.savez(os.path.join(tbase,'human.npz'),**var_dict)
             
             logger.info((f'finish: {name}'))
         except Exception as e:
