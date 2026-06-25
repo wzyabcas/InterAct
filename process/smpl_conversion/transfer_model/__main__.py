@@ -460,7 +460,7 @@ def main() -> None:
     numbers =exp_cfg.numbers
     MOTION_PATH = os.path.join('../../data',dataset,'sequences_canonical')
     
-    MOTION_PATH_OUT = os.path.join('../../data_smplh',dataset,'sequences_canonical')
+    MOTION_PATH_OUT = os.path.join('../../data',dataset+'_smplh','sequences_canonical')
     os.makedirs(MOTION_PATH_OUT,exist_ok=True)
     deformation_transfer_path = exp_cfg.get('deformation_transfer_path', '')
     def_matrix = read_deformation_transfer(
