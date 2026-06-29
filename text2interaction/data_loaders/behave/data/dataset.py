@@ -272,6 +272,10 @@ class Text2MotionDatasetV3(data.Dataset):
     
                     # TODO: hardcode
                     motion = motion[:300].astype(np.float32)
+                    
+                    # filter out invalid sequences
+                    if not np.isfinite(motion).all(): 
+                        continue
 
                     # contact_input = np.load(pjoin(opt.data_root, 'affordance_data/contact_'+name + '.npy'), allow_pickle=True)[None][0]
 
