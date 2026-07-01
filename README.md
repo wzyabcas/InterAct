@@ -568,9 +568,9 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
 </details>
 <a id="light_representation"></a>
 <details>
-  <summary>Optional: Unified Joint-based Motion Representation</summary>
+  <summary>Optional: Unified Joint-based Motion Representation of LIGHT</summary>
 
-  - To obtain the unified joint-based motion representation for [LIGHT](https://arxiv.org/pdf/2603.25734) on GRAB and BEHAVE, please first follow the [instructions](#process_hoi_get_started) to process the data from scratch. For BEHAVE, please do the [HOI Correction](#hoi_correction). For GRAB, please transfer the [SMPL-X poses to SMPL-H](#smplx2smplh). Then, execute the following step:
+  - To obtain the unified joint-based motion representation of [LIGHT](https://github.com/wzyabcas/LIGHT) on GRAB and BEHAVE, please first follow the [instructions](#process_hoi_get_started) to process the data from scratch. For BEHAVE, please do the [HOI Correction](#hoi_correction). For GRAB, please transfer the [SMPL-X poses to SMPL-H](#smplx2smplh). Then, execute the following step:
     ```
     python process/motion_representation_LIGHT.py
     ```
