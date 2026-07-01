@@ -194,7 +194,6 @@ def params2torch(params, dtype = torch.float32):
 
 
 
-
 def matrix_to_rotation_6d_np(mat):
     """
     Convert rotation matrices to continuous 6D representations
@@ -277,90 +276,90 @@ if __name__ == "__main__":
             obj_data = np.concatenate([obj_rot6D, obj_trans], axis=-1)
             obj_points = np.load(os.path.join(OBJECT_PATH, obj_name, 'sample_points.npy'))
             
-        representation = np.concatenate([joints.reshape(-1,52*3),hand_rot_scalar,obj_rot6D.reshape(-1,6),obj_trans.reshape(-1,3)],-1)
-        
-        obj_sample_path = os.path.join(OBJECT_PATH, obj_name, 'sample_points.npy')
-        
-        obj_points = np.load(obj_sample_path)
-        
-        
-        angle_matrix = Rotation.from_rotvec(obj_angles).as_matrix()
-        angle_matrix = angle_matrix[:L]
-        obj_trans = obj_trans[:L]
-        rotated = np.matmul(obj_points, angle_matrix.transpose(0,2,1)) + obj_trans[:,None]
-        
-        ## relative distance, contact labels, contact corresponding ids
-        bps_dct = bps_func.encode(torch.from_numpy(rotated).float().cuda(),feature_type=['deltas'],custom_basis=torch.from_numpy(joints).float().cuda())
-        
-        object_cids = bps_dct['ids'].detach().cpu().numpy()
-        delta = bps_dct['deltas'].detach().cpu().numpy()
-        
-        dist = np.exp(-5*np.linalg.norm(delta,axis=-1))
-        contact_ids = (np.linalg.norm(delta,axis=-1)<0.03).astype(np.float32)
-        
-        
-        ## object BPS and nomralized BPS w/ scale
-        
-        M = trimesh.load(os.path.join(OBJECT_PATH,obj_name,obj_name+'.obj'),force='mesh')
-        obj_vertices_static = torch.from_numpy(M.vertices).float()
-        margin = 0.05
-        s = torch.norm(obj_vertices_static,p=2,dim=1)
-        max_norm, max_idx = torch.max(s, dim=0)
-        scale = max_norm/(1-margin)
-        obj_vertices_static = obj_vertices_static/scale
-        
-        bps_object_geo = bps_func.encode(x=obj_vertices_static, \
-                feature_type=['deltas'], \
-                custom_basis=bps_obj[None,...])['deltas'] # T X N X 3 
-        
-        
-        
-        bps_object_geo_np = bps_object_geo.data.detach().cpu().numpy().reshape(-1)
-        bps_object_geo_np_wscale = np.concatenate([bps_object_geo_np,scale.detach().cpu().numpy().reshape(-1)],-1)
-        
-        obj_bps = np.load(os.path.join(OBJECT_BPS_PATH, obj_name, f'{obj_name}_1024.npy'))
-        
-        # seq name / beta / gender / text
-        
-        seq_name = dataset+'_'+obj_name
-        
-        gender_onehot = np.zeros((3),dtype=np.float32)
-        gender_onehot[gender_dict[gender]] = 1
-        
-        beta_f = np.concatenate([betas,gender_onehot],axis=-1)
-        
-        text_data = []
-        with cs.open(os.path.join(MOTION_PATH_raw, name, 'text.txt')) as f:
-                        
-            for line in f.readlines():
-                text_dict = {}
-                line_split = line.strip().split('#')
-                caption = line_split[0]
-                tokens = line_split[1].split(' ')
-                f_tag = 0.0
-                to_tag = 0.0
-                
+            representation = np.concatenate([joints.reshape(-1,52*3),hand_rot_scalar,obj_rot6D.reshape(-1,6),obj_trans.reshape(-1,3)],-1)
+            
+            obj_sample_path = os.path.join(OBJECT_PATH, obj_name, 'sample_points.npy')
+            
+            obj_points = np.load(obj_sample_path)
+            
+            
+            angle_matrix = Rotation.from_rotvec(obj_angles).as_matrix()
+            angle_matrix = angle_matrix[:L]
+            obj_trans = obj_trans[:L]
+            rotated = np.matmul(obj_points, angle_matrix.transpose(0,2,1)) + obj_trans[:,None]
+            
+            ## relative distance, contact labels, contact corresponding ids
+            bps_dct = bps_func.encode(torch.from_numpy(rotated).float().cuda(),feature_type=['deltas'],custom_basis=torch.from_numpy(joints).float().cuda())
+            
+            object_cids = bps_dct['ids'].detach().cpu().numpy()
+            delta = bps_dct['deltas'].detach().cpu().numpy()
+            
+            dist = np.exp(-5*np.linalg.norm(delta,axis=-1))
+            contact_ids = (np.linalg.norm(delta,axis=-1)<0.03).astype(np.float32)
+            
+            
+            ## object BPS and nomralized BPS w/ scale
+            
+            M = trimesh.load(os.path.join(OBJECT_PATH,obj_name,obj_name+'.obj'),force='mesh')
+            obj_vertices_static = torch.from_numpy(M.vertices).float()
+            margin = 0.05
+            s = torch.norm(obj_vertices_static,p=2,dim=1)
+            max_norm, max_idx = torch.max(s, dim=0)
+            scale = max_norm/(1-margin)
+            obj_vertices_static = obj_vertices_static/scale
+            
+            bps_object_geo = bps_func.encode(x=obj_vertices_static, \
+                    feature_type=['deltas'], \
+                    custom_basis=bps_obj[None,...])['deltas'] # T X N X 3 
+            
+            
+            
+            bps_object_geo_np = bps_object_geo.data.detach().cpu().numpy().reshape(-1)
+            bps_object_geo_np_wscale = np.concatenate([bps_object_geo_np,scale.detach().cpu().numpy().reshape(-1)],-1)
+            
+            obj_bps = np.load(os.path.join(OBJECT_BPS_PATH, obj_name, f'{obj_name}_1024.npy'))
+            
+            # seq name / beta / gender / text
+            
+            seq_name = dataset+'_'+obj_name
+            
+            gender_onehot = np.zeros((3),dtype=np.float32)
+            gender_onehot[gender_dict[gender]] = 1
+            
+            beta_f = np.concatenate([betas,gender_onehot],axis=-1)
+            
+            text_data = []
+            with cs.open(os.path.join(MOTION_PATH_raw, name, 'text.txt')) as f:
+                            
+                for line in f.readlines():
+                    text_dict = {}
+                    line_split = line.strip().split('#')
+                    caption = line_split[0]
+                    tokens = line_split[1].split(' ')
+                    f_tag = 0.0
+                    to_tag = 0.0
+                    
 
-                text_dict['caption'] = caption
-                
-                text_data.append(text_dict)
-        
-        dct = {}
-        
-        L = min(L,300)
-        dct['motion'] = representation[:L]
-        dct['length'] = L
-        dct['text'] = text_data
-        dct['seq_name'] = seq_name
-        dct['beta'] = beta_f
-        dct['obj_points'] = obj_points
-        dct['object_cids'] = object_cids[:L]
-        dct['contact_ids'] = contact_ids[:L]
-        dct['dist'] = dist[:L]
-        dct['obj_bps'] = obj_bps
-        dct['bps_normalize'] = bps_object_geo_np_wscale
-        
-        np.savez(os.path.join(MOTION_PATH_raw, name, 'data.npz'), **dct)
+                    text_dict['caption'] = caption
+                    
+                    text_data.append(text_dict)
+            
+            dct = {}
+            
+            L = min(L,300)
+            dct['motion'] = representation[:L]
+            dct['length'] = L
+            dct['text'] = text_data
+            dct['seq_name'] = seq_name
+            dct['beta'] = beta_f
+            dct['obj_points'] = obj_points
+            dct['object_cids'] = object_cids[:L]
+            dct['contact_ids'] = contact_ids[:L]
+            dct['dist'] = dist[:L]
+            dct['obj_bps'] = obj_bps
+            dct['bps_normalize'] = bps_object_geo_np_wscale
+            
+            np.savez(os.path.join(MOTION_PATH_raw, name, 'data.npz'), **dct)
         
         
         
