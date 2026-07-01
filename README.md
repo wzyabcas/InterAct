@@ -69,7 +69,7 @@
 - [x] Release HOI correction data V2
 - [x] Release baseline constructions for the other HOI generative tasks
 - [x] Release the data processing code for [LIGHT](https://github.com/wzyabcas/LIGHT)
-- [ ] Release the dataset with unified SMPL representation
+- [x] Release the data prcessing for unified SMPL representation
 
 
 ## General Description
@@ -564,17 +564,18 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     `--dataset`: dataset in [grab, omomo, chairs, intercap]
     
     We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , special thanks to them!
+    We have released the SMPL-H data for NeuralDome, IMHD, CHAIRS, and OMOMO at [LIGHT](https://github.com/wzyabcas/LIGHT.git). 
 
 </details>
 <a id="light_representation"></a>
 <details>
-  <summary>Optional: Unified Joint-based Motion Representation of LIGHT</summary>
+  <summary>Optional: Unified Joint-based Motion Representation for LIGHT (ICLR 2026)</summary>
 
-  - To obtain the unified joint-based motion representation of [LIGHT](https://github.com/wzyabcas/LIGHT) on GRAB and BEHAVE, please first follow the [instructions](#process_hoi_get_started) to process the data from scratch. For BEHAVE, please do the [HOI Correction](#hoi_correction). For GRAB, please transfer the [SMPL-X poses to SMPL-H](#smplx2smplh). Then, execute the following step:
+  - To obtain the unified joint-based motion representation of [LIGHT](https://github.com/wzyabcas/LIGHT) on GRAB and BEHAVE, please first follow the [instructions](#process_hoi_get_started) to process the data from scratch. For BEHAVE, it's recommended with the [HOI Correction](#hoi_correction) to match the results in the paper. For GRAB, please transfer the [SMPL-X poses to SMPL-H](#smplx2smplh). Then, execute the following step:
     ```
     python process/motion_representation_LIGHT.py
     ```
-    If you are interested in the other datasets, including NeuralDome, IMHD, CHAIRS, and OMOMO, please refer to our release [here](https://github.com/wzyabcas/LIGHT.git). 
+    For the SMPL-H data for NeuralDome, IMHD, CHAIRS, and OMOMO, please refer to our release [here](https://github.com/wzyabcas/LIGHT.git). 
 
 
   
