@@ -51,6 +51,8 @@
 - [2026-02-03] Release the pipeline for object-to-human.
 - [2025-02-03] Release corrected OMOMO data V2.
 - [2026-05-03] Release the pipeline for human-to-object.
+- [2026-07-01] Release the data conversion code for [LIGHT](https://github.com/wzyabcas/LIGHT).
+
 
 
 ## TODO
@@ -66,6 +68,7 @@
 - [x] Release baseline constructions for Object to Human
 - [x] Release HOI correction data V2
 - [x] Release baseline constructions for the other HOI generative tasks
+- [x] Release the data processing code for [LIGHT](https://github.com/wzyabcas/LIGHT)
 - [ ] Release the dataset with unified SMPL representation
 
 
@@ -142,7 +145,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
 - **ParaHome:** [License](https://github.com/snuvclab/ParaHome?tab=readme-ov-file#license)
 
 </details>
-
+<a id="process_hoi_get_started"></a>
 <details>
   <summary>Please follow these steps to get started</summary>
 
@@ -493,9 +496,9 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
   python process/process_bps.py
   ```
 
+
 </details> 
-
-
+<a id="hoi_correction"></a>
 <details>
   <summary>Optional: HOI Correction</summary>
 
@@ -524,9 +527,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
 
 
 </details>
-
-
-
+<a id="smplx2smplh"></a>
 <details>
   <summary>Optional: Unify the motion to SMPL-H</summary>
 
@@ -564,6 +565,19 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     
     We adapt the smpl conversion code from [https://github.com/vchoutas/smplx.git](https://github.com/vchoutas/smplx.git) , special thanks to them!
 
+</details>
+<a id="light_representation"></a>
+<details>
+  <summary>Optional: Unified Joint-based Motion Representation</summary>
+
+  - To obtain the unified joint-based motion representation for [LIGHT](https://arxiv.org/pdf/2603.25734) on GRAB and BEHAVE, please first follow the [instructions](#process_hoi_get_started) to process the data from scratch. For BEHAVE, please do the [HOI Correction](#hoi_correction). For GRAB, please transfer the [SMPL-X poses to SMPL-H](#smplx2smplh). Then, execute the following step:
+    ```
+    python process/motion_representation_LIGHT.py
+    ```
+    If you are interested in the other datasets, including NeuralDome, IMHD, CHAIRS, and OMOMO, please refer to our release [here](https://github.com/wzyabcas/LIGHT.git). 
+
+
+  
 </details>
 
 ## Data Loading 
