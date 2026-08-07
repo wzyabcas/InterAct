@@ -1,8 +1,10 @@
 import numpy as np
 import trimesh
 import math
-from render.mesh_utils import MeshViewer
-from render.utils import colors
+# from render.mesh_utils import MeshViewer
+# from render.utils import colors
+from .mesh_utils import MeshViewer
+from .utils import colors
 import imageio
 import pyrender
 from PIL import Image

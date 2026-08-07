@@ -99,11 +99,17 @@ def _load_object_entries(sequence_dir):
     for object_file in object_files:
         with np.load(os.path.join(sequence_dir, object_file), allow_pickle=True) as f:
             object_data = {k: f[k] for k in f.files}
+        if "name" in object_data:
+            obj_name = _object_name_to_str(object_data["name"])
+        elif "mesh_name" in object_data:
+            obj_name = _object_name_to_str(object_data["mesh_name"])
+        else:
+            raise ValueError(f"Object file {object_file} is missing 'name' or 'mesh_name' field.")
         object_entries.append(
             {
                 "filename": object_file,
                 "data": object_data,
-                "name": _object_name_to_str(object_data["name"]),
+                "name": obj_name,
             }
         )
     if not object_entries:
@@ -182,11 +188,13 @@ def _prepare_betas_for_model(betas, smpl_model):
 smplh_model_male = smplx.create(MODEL_PATH, model_type='smplh',
                         gender="male",
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
 
 smplh_model_female = smplx.create(MODEL_PATH, model_type='smplh',
                         gender="female",
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
 
 
@@ -399,7 +407,8 @@ def visualize_grab(name, MOTION_PATH):
 
 
 if __name__ == "__main__":
-    datasets = ['behave', 'intercap', 'omomo', 'grab', 'arctic', 'parahome']
+    datasets = ['behave', 'intercap', 'omomo', 'grab', 'arctic', 'parahome', 'humoto']
+    datasets = ['humoto_test']
     data_root = './data'
     for dataset in datasets:
         dataset_path = os.path.join(data_root, dataset)
@@ -439,6 +448,10 @@ if __name__ == "__main__":
                 elif dataset.upper() == 'OMOMO':
                     verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 16)
                     markers = verts[:,markerset_smplx]
+                elif dataset.upper() == 'HUMOTO_TEST':
+                    verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplh', 10)
+                    markers = verts[:,markerset_smplh]
+
                 np.save(os.path.join(MOTION_PATH, name, 'markers.npy'), markers)
                 centroid = joints[0,0]
             
@@ -531,6 +544,8 @@ if __name__ == "__main__":
                     )
                 elif dataset.upper() == 'OMOMO':
                     verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplx', 16)
+                elif dataset.upper() == 'HUMOTO_TEST':
+                    verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplh', 10)
                 
                 object_min_y = []
                 for obj_state in new_objects_state:
@@ -574,18 +589,25 @@ if __name__ == "__main__":
                     }
                 np.savez(os.path.join(NEW_MOTION_PATH, name, 'human.npz'), **new_human)
                 for obj_state in new_objects_state:
-                    new_obj = {
-                        'angles': np.array(obj_state["new_angles"]),
-                        'trans': np.array(obj_state["new_trans"]),
-                        'name': obj_state["name"]
-                    }
+                    if dataset.upper() == 'HUMOTO_TEST':
+                        new_obj = {
+                            'angles': np.array(obj_state["new_angles"]),
+                            'trans': np.array(obj_state["new_trans"])
+                        }
+                    else:
+                        new_obj = {
+                            'angles': np.array(obj_state["new_angles"]),
+                            'trans': np.array(obj_state["new_trans"]),
+                            'name': obj_state["name"]
+                        }
                     for k, v in obj_state["data"].items():
                         if k not in new_obj:
                             new_obj[k] = v
                     np.savez(os.path.join(NEW_MOTION_PATH, name, obj_state["filename"]), **new_obj)
                 if os.path.exists(os.path.join(MOTION_PATH, name, 'text.txt')):
                     shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'action.txt'))
-                    shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'action.npy'))
+                    if not dataset.upper() == 'HUMOTO_TEST':
+                        shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'action.npy'))
                     shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'text.txt'))
             except Exception as e:
                 print(e)
