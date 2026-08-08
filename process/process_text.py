@@ -14,6 +14,30 @@ ActionSet = ['Rotate', 'Move', 'Carry', 'Hold', 'Play',
              'Manipulate', 'Sit', 'Bowling', 'Lift', 'Eat', 
              'Adjust', 'Swing', 'Pass', 'Exercise', 'Kick', 'Drink']
 
+# InterCap uses different object names in its annotation video filenames than in
+# the processed motion folders.  Keep the canonical motion/object names intact
+# and translate only while matching a sequence to its annotation.
+INTERCAP_ANNOTATION_OBJECT_ALIASES = {
+    'suitcase': 'green_suitcase',
+    'soccerball': 'soccer_ball',
+    'toolbox': 'tool_box',
+    'fantabottle': 'fanta_bottle',
+}
+
+
+def get_annotation_sequence_name(dataset, sequence_name):
+    if dataset != 'intercap':
+        return sequence_name
+
+    sequence_prefix, separator, object_name = sequence_name.rpartition('_')
+    if not separator:
+        return sequence_name
+
+    annotation_object_name = INTERCAP_ANNOTATION_OBJECT_ALIASES.get(
+        object_name, object_name
+    )
+    return f'{sequence_prefix}_{annotation_object_name}'
+
 nlp = spacy.load('en_core_web_sm')
 def process_text(sentence):
     sentence = sentence.replace('-', '')
@@ -105,7 +129,8 @@ for dataset in datasets:
         human_motion = np.load(human_path, allow_pickle=True)
         object_motion = np.load(object_path, allow_pickle=True)
         for video_url, text_1, text_2, text_3 in zip(video_urls, texts_1, texts_2, texts_3):
-            result_name = video_url.split('_')[0] + '_' + sequence_name + '_' + video_url.split('_')[-1]
+            annotation_sequence_name = get_annotation_sequence_name(dataset, sequence_name)
+            result_name = video_url.split('_')[0] + '_' + annotation_sequence_name + '_' + video_url.split('_')[-1]
             if result_name == video_url:
                 try:
                     text_segs_1 = remove_punctuation(text_1)
