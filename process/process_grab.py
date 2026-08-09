@@ -119,8 +119,13 @@ for sub_id in ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10']:
         rotvecs2 = obj_angles
         rotations2 = Rotation.from_rotvec(rotvecs2)
 
-        # Apply the rotation to the batch of rotations
-        rotated_rotations2 = rotation_matrix_x * rotations2
+        # GRAB's official ObjectModel treats mesh vertices as row vectors:
+        #     vertices = v_template @ R_grab + transl
+        # The rest of this repository uses SciPy's column-vector convention and
+        # renders row-vector vertices as ``vertices @ R_standard.T``.  Therefore
+        # the raw GRAB rotation must first be transposed/inverted before applying
+        # the world-coordinate conversion.
+        rotated_rotations2 = rotation_matrix_x * rotations2.inv()
         # Convert the rotated rotations back to rotation vectors
         obj_angles = rotated_rotations2.as_rotvec()
         obj_trans_delta = rotation_matrix_x.apply(obj_trans - pelvis)
