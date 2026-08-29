@@ -14,27 +14,21 @@ sys.path.insert(0, str(REPO_ROOT))
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 from process.utils import ObjectSequence, ObjectsSequence, HumanSequence, Sequence, Processor
-# dict_path = {
-#     'MOTION_PATH': './data/humoto/sequences',
-#     'OBJECT_PATH': './data/humoto/objects',
-#     'MODEL_PATH': './models',
-#     'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh',
-#     'MOTION_PATH_RAW_OBJECT': './data/humoto/raw/output_process',
-#     'OBJECT_PATH_RAW': './data/humoto/raw/humoto_objects_0805',
-#     'PATH_RAW': './data/humoto/raw'
-# }
-dict_test_path = {
-    'MOTION_PATH': './data/humoto_test/sequences',
-    'OBJECT_PATH': './data/humoto_test/objects',
-    'METADATA_PATH': './data/humoto_test/raw/humoto_0805',
+dict_path = {
+    'MOTION_PATH': './data/humoto/sequences',
+    'OBJECT_PATH': './data/humoto/objects',
     'MODEL_PATH': './models',
-    'MOTION_PATH_RAW_HUMAN': './data/humoto_test/raw/smplh',
-    'MOTION_PATH_RAW_OBJECT': './data/humoto_test/raw/output_process',
-    'OBJECT_PATH_RAW': './data/humoto_test/raw/humoto_objects_0805',
-    'PATH_RAW': './data/humoto_test/raw',
-    'PATH_ROOT': './data/humoto_test/',
+    
+    'PATH_RAW': './data/humoto/raw',
+    'PATH_ROOT': './data/humoto/',
+    
+    'METADATA_PATH': './data/humoto/raw/humoto_0805',
+    'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh',
+    'MOTION_PATH_RAW_OBJECT': './data/humoto/raw/output_process',
+    'OBJECT_PATH_RAW': './data/humoto/raw/humoto_objects_0805',
+
 }
-dict_path = dict_test_path  # Switch between test and full dataset by changing this line
+
 procer = Processor(dict_path, smpl_init=False)  
 
 datasets = ['humoto']

@@ -408,7 +408,6 @@ def visualize_grab(name, MOTION_PATH):
 
 if __name__ == "__main__":
     datasets = ['behave', 'intercap', 'omomo', 'grab', 'arctic', 'parahome', 'humoto']
-    datasets = ['humoto_test']
     data_root = './data'
     for dataset in datasets:
         dataset_path = os.path.join(data_root, dataset)
@@ -448,7 +447,7 @@ if __name__ == "__main__":
                 elif dataset.upper() == 'OMOMO':
                     verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplx', 16)
                     markers = verts[:,markerset_smplx]
-                elif dataset.upper() == 'HUMOTO_TEST':
+                elif dataset.upper() == 'HUMOTO':
                     verts, faces, joints = visualize_smpl(name, MOTION_PATH, 'smplh', 10)
                     markers = verts[:,markerset_smplh]
 
@@ -544,7 +543,7 @@ if __name__ == "__main__":
                     )
                 elif dataset.upper() == 'OMOMO':
                     verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplx', 16)
-                elif dataset.upper() == 'HUMOTO_TEST':
+                elif dataset.upper() == 'HUMOTO':
                     verts, faces, joints = visualize_smpl(name, NEW_MOTION_PATH, 'smplh', 10)
                 
                 object_min_y = []
@@ -589,7 +588,7 @@ if __name__ == "__main__":
                     }
                 np.savez(os.path.join(NEW_MOTION_PATH, name, 'human.npz'), **new_human)
                 for obj_state in new_objects_state:
-                    if dataset.upper() == 'HUMOTO_TEST':
+                    if dataset.upper() == 'HUMOTO':
                         new_obj = {
                             'angles': np.array(obj_state["new_angles"]),
                             'trans': np.array(obj_state["new_trans"])
@@ -606,7 +605,7 @@ if __name__ == "__main__":
                     np.savez(os.path.join(NEW_MOTION_PATH, name, obj_state["filename"]), **new_obj)
                 if os.path.exists(os.path.join(MOTION_PATH, name, 'text.txt')):
                     shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'action.txt'))
-                    if not dataset.upper() == 'HUMOTO_TEST':
+                    if not dataset.upper() == 'HUMOTO':
                         shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'action.npy'))
                     shutil.copy(os.path.join(MOTION_PATH, name, 'text.txt'), os.path.join(NEW_MOTION_PATH, name, 'text.txt'))
             except Exception as e:

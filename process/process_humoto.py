@@ -32,11 +32,11 @@ dict_path = {
 if not os.path.isdir(dict_path['PATH_RAW']):
     raise FileNotFoundError(f"Raw data path does not exist: {dict_path['PATH_RAW']}. Please check your paths.")
 
-visualize_raw_data = True
+visualize_raw_data = False
 
 # The processor can memorize the paths. If so, it would later try to load by memory first.
 # In the interest of brevity, please send the paths to the processor when you create it.
-procer = Processor(dict_path, smpl_init=False)  
+procer = Processor(dict_path)  
 
 sequence_names = [
     os.path.splitext(filename)[0]
@@ -91,25 +91,25 @@ for i, name in tqdm(enumerate(sequence_names)):
             os.makedirs(sequence_dir, exist_ok=False)
         else: os.makedirs(sequence_dir, exist_ok=True)
 
-        human_sequence:HumanSequence = procer._load_human_sequence(procer.motion_path_raw_human, name, False)
-        objs_sequence:List[ObjectSequence] = procer._load_objects_sequence(procer.motion_path_raw_object, procer.object_path_raw, name)
+        human_sequence:HumanSequence = procer._load_human_sequence(dict_path['MOTION_PATH_RAW_HUMAN'], name, False)
+        objs_sequence:List[ObjectSequence] = procer._load_objects_sequence(dict_path['MOTION_PATH_RAW_OBJECT'], dict_path['OBJECT_PATH_RAW'], name)
         
         logging.debug("rotating the whole HOI, to make sure the coordinate system is y-up ...")
-        human_sequence, objs_sequence = procer._rotate_HOI_at_given_angle(human_sequence, objs_sequence, angle=0)
+        human_sequence, objs_sequence = procer._rotate_HOI_at_given_angle(human_sequence, objs_sequence, angle=0) # humoto is already y-up.
         logging.debug("lifting/descending the whole HOI ...")
         human_sequence, objs_sequence, diff_fix = procer._make_sure_HOI_on_ground(human_sequence, objs_sequence, smpl)
         logging.debug(f"The minimum y value of the human and object vertices is {diff_fix}.")
         logging.debug("visualizing the body, objects, and axes ...")
-        if i < 5:
-            Debugger.visualize_body_obj_and_axes(
-                body_verts_faces=human_sequence.get_body_verts_faces_smpl(smpl),
-                obj_verts_faces=ObjectSequence.merge_object_meshes(objs_sequence),
-                save_path=f"/media/volume/sxu1/jianqi/code/test/InterAct/results/raw_visualize_{name}.mp4",
-                axis_length=0.5,
-                multi_angle=True,
-                h=512,
-                w=512,
-            )
+        # if i < 5:
+        #     Debugger.visualize_body_obj_and_axes(
+        #         body_verts_faces=human_sequence.get_body_verts_faces_smpl(smpl),
+        #         obj_verts_faces=ObjectSequence.merge_object_meshes(objs_sequence),
+        #         save_path=f"/media/volume/sxu1/jianqi/code/test/InterAct/results/raw_visualize_{name}.mp4",
+        #         axis_length=0.5,
+        #         multi_angle=True,
+        #         h=512,
+        #         w=512,
+        #     )
 
         for obj_sequence in objs_sequence:
             dict_obj_sequence = {

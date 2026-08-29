@@ -149,11 +149,15 @@ class Processor():
 
     def _get_body_vertices_from_smpl(self, human_sequence: HumanSequence, dict_smpl_model: Optional[Dict[str, smplx.SMPLH]] = None) -> np.ndarray:
         """Copied from process_behave.py.  Get vertices from SMPL-H parameters."""
+        
+        # For those who initialized the Processor with smpl params.
         if dict_smpl_model is None:
             assert hasattr(self, "dict_smpl_model"), "dict_smpl_model is not initialized. Please provide it or initialize it."
             dict_smpl_model = self.dict_smpl_model
             logger.debug("Using default SMPL-H model for vertex extraction.")
+            
         smpl_model = dict_smpl_model[human_sequence.gender]
+        
         smplx_output = smpl_model(
             body_pose=torch.from_numpy(human_sequence.poses[:, 3:66]).float(),
             global_orient=torch.from_numpy(human_sequence.poses[:, :3]).float(),
@@ -173,14 +177,10 @@ class Processor():
         self,
         human_sequence: HumanSequence,
         objs_sequence: List[ObjectSequence],
-        dict_smpl_model: Optional[
-            Dict[str, smplx.SMPLH]
-        ] = None,
+        dict_smpl_model: Optional[Dict[str, smplx.SMPLH]] = None,
     ):
         if not objs_sequence:
-            raise ValueError(
-                "Cannot compute ground height without objects"
-            )
+            raise ValueError("Cannot compute ground height without objects")
 
         # Only the first 30 frames are used for ground estimation.
         human_sample_count = min(

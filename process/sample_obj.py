@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 datasets = ['behave', 'intercap', 'grab', 'omomo', 'humoto']
-datasets = ['humoto_test']
+datasets = ['humoto']
 data_root = './data'
 id_root = './assets/sample_objids'
 for dataset in datasets:
@@ -12,7 +12,7 @@ for dataset in datasets:
     object_name = os.listdir(OBJECT_PATH)
     for obj_name in object_name:
         mesh_obj = trimesh.load(os.path.join(OBJECT_PATH, f"{obj_name}/{obj_name}.obj"), force='mesh')
-        if dataset.upper() == 'HUMOTO_TEST':
+        if dataset.upper() == 'HUMOTO':
             obj_points, _ = trimesh.sample.sample_surface(mesh_obj, 340, seed=0)
             obj_points = obj_points.astype(np.float32)
         else:

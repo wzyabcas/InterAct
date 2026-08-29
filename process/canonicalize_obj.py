@@ -115,7 +115,7 @@ def canonicalize_mesh_and_get_center(mesh_path, mesh_center_cache):
     return center
 
 def prepare_working_obj_mesh(raw_object_path, working_object_path):
-    # maybe copy "/media/volume/sxu1/jianqi/code/test/InterAct/data/humoto_test/raw/humoto_objects_0805" to "/media/volume/sxu1/jianqi/code/test/InterAct/data/humoto_test/objects"?
+    # copy "./data/humoto/raw/humoto_objects_0805" to "./data/humoto/objects"
     if not os.path.isdir(raw_object_path):
         raise FileNotFoundError(f"Raw object path {raw_object_path} does not exist.")
     os.makedirs(working_object_path, exist_ok=True)
@@ -145,8 +145,7 @@ def prepare_working_obj_mesh(raw_object_path, working_object_path):
             )
 
 if __name__ == "__main__":
-    # datasets = ['behave', 'intercap', 'grab', 'omomo', 'arctic', 'parahome', 'humoto']
-    datasets = ['humoto_test']
+    datasets = ['behave', 'intercap', 'grab', 'omomo', 'arctic', 'parahome', 'humoto']
     data_root = './data'
     for dataset in datasets:
         print("Processing dataset:", dataset)
@@ -154,8 +153,10 @@ if __name__ == "__main__":
         MOTION_PATH = os.path.join(dataset_path, 'sequences_seg')
         OBJECT_PATH = os.path.join(dataset_path, 'objects')
 
-        # copy "/media/volume/sxu1/jianqi/code/test/InterAct/data/humoto_test/raw/humoto_objects_0805" to "/media/volume/sxu1/jianqi/code/test/InterAct/data/humoto_test/objects"?
-        if dataset == 'humoto_test':
+
+
+        # copy "./data/humoto/raw/humoto_objects_0805" to "./data/humoto/objects"
+        if dataset == 'humoto':
             prepare_working_obj_mesh(os.path.join(dataset_path, 'raw', 'humoto_objects_0805'), OBJECT_PATH)
 
         if not os.path.isdir(MOTION_PATH) or not os.path.isdir(OBJECT_PATH):
