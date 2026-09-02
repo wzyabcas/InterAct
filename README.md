@@ -340,6 +340,65 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
         
     ```
 
+  - **HUMOTO**
+
+    Download raw sequences, and meta files from [the project website](https://adobe-research.github.io/humoto/README.md)
+
+  
+    Expected File Structure:
+    ```bash
+    data/humoto
+    ├── raw
+        ├── humoto_0805
+        │   ├── sequence_name
+        │   |   ├── sequence_name.fbx
+        |   |   ├── sequence_name.glb
+        │   |   └── sequence_name.yaml
+        │   └──  ...
+        |
+        ├── humoto_0805_scale_cleaned
+        │   ├── sequence_name
+        │   |   └── sequence_name.fbx
+        │   └──  ...
+        |
+        ├── humoto_objects_0805
+        │   ├── object_name
+        │   |   ├── object_name.fbx
+        |   |   ├── object_name.glb
+        |   |   ├── object_name.mtl
+        |   |   ├── object_name.obj
+        │   |   └── object_name.yaml
+        │   └──  ...
+        |           
+        ├── output_process
+        │   ├── sequence_name
+        │   |   ├── human_joints_mixamo.pt
+        |   |   ├── human_pose_params_matrix.pt
+        |   |   └── obj_pose.npz
+        │   └──  ...
+        |           
+        │── smplh
+        │   ├── sequence_name.npz
+        │   └──  ...
+        │       
+        │── smplx
+        │   ├── activating_floor_lamp_with_right_hand-485.npz
+        |   |   └── human.pkl
+        │   └── add_dressing_to_mixing_bowl-592.npz
+        |       └── human.pkl
+        ├── up_bone_humoto
+        │   ├── sequence_name
+        │   |   ├── sequence_name.fbx
+        |   |   ├── sequence_name.pkl
+        |   |   ├── human_joints_mixamo.pt
+        |   |   ├── human_pose_params_matrix.pt
+        │   |   └── obj_pose.npz
+        │   └──  ...
+        │   
+        └── vis/
+        
+    ```
+
 4. Data Processing
 
     After organizing the raw data, execute the following steps to process the datasets into our standard representations.
@@ -354,6 +413,15 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     python process/process_omomo.py
     python process/process_parahome.py
     python process/process_arctic.py
+    python process/process_humoto.py
+    ```
+
+  - Segment the sequences according to annotations and generate associated text files:
+    
+    ```bash
+    python process/process_text.py
+    python process/process_text_omomo.py
+    python process/process_text_humoto.py
     ```
 
   - Canonicalize the object mesh:
@@ -362,16 +430,18 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     python process/canonicalize_obj.py
     ```
     
-  - Segment the sequences according to annotations and generate associated text files:
-    
+  - Canonicalize the human data by running:
+
     ```bash
-    python process/process_text.py
-    python process/process_text_omomo.py
-    ```
+    python process/canonicalize_human.py
     
+    # or multi_thread for speedup
+    python process/canonicalize_human_multi_thread.py
+    ```
+
     After processing, the directory structure under [data/](data/) should include all sub-datasets, including:
     
-    ```
+    ```bash
     data
     ├── annotation
     ├── behave
@@ -445,22 +515,47 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     │           ├── human.npz
     │           ├── object_{object_name}_{part}.npz
     │           └── text.txt
-    └── arctic
+    ├── arctic
+    │   ├── objects
+    │   │   └── object_name
+    │   │       ├── top.obj
+    │   │       ├── bottom.obj
+    │   │       └── mesh.obj
+    │   ├── sequences_seg
+    │   │   └── id
+    │   │       ├── human.npz
+    │   │       ├── object.npz
+    │   │       └── text.txt
+    │   └── sequences_canonical
+    │       └── id
+    │           ├── human.npz
+    │           ├── object.npz
+    │           └── text.txt
+    └── humoto
         ├── objects
         │   └── object_name
-        │       ├── top.obj
-        │       ├── bottom.obj
-        │       └── mesh.obj
+        │       ├── material_0.png
+        │       ├── material.mtl
+        │       ├── object_name.mtl
+        │       └── object_name.obj
+        ├── sequences
+        │   ├── sequence_name
+        │   │   ├── human.npz
+        │   │   └── instance_name.npz     # instance_name differentiate mug.001 and mug 
+        |   └── ...
         ├── sequences_seg
-        │   └── id
-        │       ├── human.npz
-        │       ├── object.npz
-        │       └── text.txt
+        │   ├── sequence_name_start_frame_end_frame_seg_time:03d
+        │   │   ├── human.npz
+        │   │   ├── object_instance_name.npz
+        │   │   └── text.txt     
+        |   └── ...
         └── sequences_canonical
-            └── id
-                ├── human.npz
-                ├── object.npz
-                └── text.txt
+            ├── sequence_name_start_frame_end_frame_seg_time:03d
+            │   ├── action.txt
+            │   ├── human.npz
+            │   ├── instance_name.npz
+            │   └── text.txt     
+            └── ...
 
     For dataset parahome involving multiple objects with mixing rigid objects each with a single part and articulated objects each with multiple parts, the transformation of every part of the object is stored independently as a object_{object_name}_{part}.npz file with keys `angles` for rotation, `trans` for translation, and name.
 
@@ -469,14 +564,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
     
     ```
     
-- Canonicalize the human data by running:
 
-  ```bash
-  python process/canonicalize_human.py
-  
-  # or multi_thread for speedup
-  python process/canonicalize_human_multi_thread.py
-  ```
 
 - Sample object keypoints:
 

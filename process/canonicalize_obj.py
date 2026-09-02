@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import trimesh
+import shutil
+
 from scipy.spatial.transform import Rotation
 
 
@@ -36,12 +38,18 @@ def _load_object_entries(sequence_dir):
         object_path = os.path.join(sequence_dir, object_file)
         with np.load(object_path, allow_pickle=True) as f:
             object_data = {k: f[k] for k in f.files}
+        if "name" in object_data:
+            obj_name = _object_name_to_str(object_data["name"])
+        elif "mesh_name" in object_data:
+            obj_name = _object_name_to_str(object_data["mesh_name"])
+        else:
+            raise ValueError(f"Object file {object_file} is missing 'name' or 'mesh_name' field.")
         object_entries.append(
             {
                 "filename": object_file,
                 "filepath": object_path,
                 "data": object_data,
-                "name": _object_name_to_str(object_data["name"]),
+                "name": obj_name,
             }
         )
     return object_entries
@@ -97,7 +105,8 @@ def canonicalize_mesh_and_get_center(mesh_path, mesh_center_cache):
     if mesh_path in mesh_center_cache:
         return mesh_center_cache[mesh_path]
 
-    mesh_obj = trimesh.load(mesh_path, force='mesh')
+    # mesh_obj = trimesh.load(mesh_path, force='mesh')
+    mesh_obj = trimesh.load(mesh_path, force='mesh', process=False)
     obj_verts = mesh_obj.vertices
     center = obj_verts.mean(axis=0)
     mesh_obj.vertices = obj_verts - center[None, :]
@@ -105,14 +114,51 @@ def canonicalize_mesh_and_get_center(mesh_path, mesh_center_cache):
     mesh_center_cache[mesh_path] = center
     return center
 
+def prepare_working_obj_mesh(raw_object_path, working_object_path):
+    # copy "./data/humoto/raw/humoto_objects_0805" to "./data/humoto/objects"
+    if not os.path.isdir(raw_object_path):
+        raise FileNotFoundError(f"Raw object path {raw_object_path} does not exist.")
+    os.makedirs(working_object_path, exist_ok=True)
+    if os.listdir(working_object_path):
+        raise FileExistsError(f"Working object path {working_object_path} is not empty.")
+    object_names = sorted(os.listdir(raw_object_path))
+    for object_name in object_names:
+        src_dir = os.path.join(raw_object_path, object_name)
+        if not os.path.isdir(src_dir):
+            continue
+
+        src_obj = os.path.join(src_dir, f"{object_name}.obj")
+        src_mtl = os.path.join(src_dir, f"{object_name}.mtl")
+        if not os.path.isfile(src_obj):
+            raise FileNotFoundError(
+                f"Missing object mesh: {src_obj}"
+            )
+
+        dst_dir = os.path.join(working_object_path, object_name)
+        os.makedirs(dst_dir, exist_ok=False)
+        shutil.copy2(src_obj, os.path.join(dst_dir, f"{object_name}.obj"))
+
+        if os.path.isfile(src_mtl):
+            shutil.copy2(
+                src_mtl,
+                os.path.join(dst_dir, f"{object_name}.mtl"),
+            )
+
 if __name__ == "__main__":
-    datasets = ['behave', 'intercap', 'grab', 'omomo', 'arctic', 'parahome']
+    datasets = ['behave', 'intercap', 'grab', 'omomo', 'arctic', 'parahome', 'humoto']
     data_root = './data'
     for dataset in datasets:
         print("Processing dataset:", dataset)
         dataset_path = os.path.join(data_root, dataset)
         MOTION_PATH = os.path.join(dataset_path, 'sequences_seg')
         OBJECT_PATH = os.path.join(dataset_path, 'objects')
+
+
+
+        # copy "./data/humoto/raw/humoto_objects_0805" to "./data/humoto/objects"
+        if dataset == 'humoto':
+            prepare_working_obj_mesh(os.path.join(dataset_path, 'raw', 'humoto_objects_0805'), OBJECT_PATH)
+
         if not os.path.isdir(MOTION_PATH) or not os.path.isdir(OBJECT_PATH):
             print(f"Skip dataset {dataset}: missing sequences or objects folder.")
             continue
@@ -158,3 +204,5 @@ if __name__ == "__main__":
                 # Preserve all existing fields (e.g. ARCTIC's 'arti'), update only translation.
                 object_data["trans"] = new_obj_trans
                 np.savez(entry["filepath"], **object_data)
+                print(f"save to: {entry['filepath']}")
+        print(f"Canonicalized {len(mesh_center_cache)} object meshes")
