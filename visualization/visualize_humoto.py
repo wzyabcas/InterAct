@@ -496,7 +496,6 @@ def debug_visualize_body_obj(
 
 
 # visualize surface motion of smpl model
-i = 0
 for k, name in tqdm(enumerate(data_name)):
     print(name)
     try:
@@ -512,10 +511,10 @@ for k, name in tqdm(enumerate(data_name)):
             verts, faces = visualize_smpl(name, MOTION_PATH, 'smplx', 10, 12)
         elif dataset == 'OMOMO':
             verts, faces = visualize_smpl(name, MOTION_PATH, 'smplx', 16)
-        elif dataset == 'HUMOTO_TEST':
+        elif dataset == 'HUMOTO':
             verts, faces = visualize_smpl(name, MOTION_PATH, 'smplh', 10)
 
-        if dataset != 'HUMOTO_TEST':
+        if dataset != 'HUMOTO':
             with np.load(os.path.join(MOTION_PATH, name, 'object.npz'), allow_pickle=True) as f:
                 obj_angles, obj_trans, obj_name = f['angles'], f['trans'], str(f['name'])
 
@@ -527,7 +526,7 @@ for k, name in tqdm(enumerate(data_name)):
             obj_verts = np.matmul(obj_verts, np.transpose(angle_matrix, (0, 2, 1))) + obj_trans[:, None, :]
             rend_video_path = os.path.join(results_folder, '{}_{}_{}.mp4'.format(dataset, name, obj_name))
             visualize_body_obj(verts, faces, obj_verts, obj_faces, save_path=rend_video_path, show_frame=True, multi_angle=True)
-        elif dataset == 'HUMOTO_TEST':
+        elif dataset == 'HUMOTO':
             obj_verts, obj_faces, instance_names = load_humoto_objects(
                 name,
                 MOTION_PATH,
@@ -555,9 +554,6 @@ for k, name in tqdm(enumerate(data_name)):
                 h=512,
                 w=512
             )
-            i += 1
-            if i == 2:
-                exit()
     except Exception as e:
         print(e)
         continue

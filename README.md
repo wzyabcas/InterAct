@@ -342,12 +342,29 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
 
   - **HUMOTO**
 
-    Download raw sequences, and meta files from [the project website](https://adobe-research.github.io/humoto/README.md)
+    Download the raw sequences and metadata from the [HUMOTO project website](https://adobe-research.github.io/humoto/README.md), then follow the data conversion steps in the HUMOTO repository's README.
 
+    For the **Example: Rendering Sequences** step, use our modified `render_humoto_pytorch3d.py`, launched through `scripts/render.sh` in the HUMOTO repository. This version renders the sequences and exports human joint positions, human transformation matrices, and object poses for SMPL-H fitting.
+
+    Update the dataset, object, output, and renderer paths in `scripts/render.sh` to match your local setup, then run:
+
+    ```bash
+    export HUMOTO_REPO_ROOT="/path/to/humoto"
+    cd "$HUMOTO_REPO_ROOT"
+    bash scripts/render.sh
+    ```
+
+    Next, return to the InterAct repository and configure `process/scripts/bvh2smplh.sh`. Set `OUTPUT_DIR` to the renderer's output directory, and update `PATH_SMPLH`, `HUMOTO_OBJECT_DIR`, and `PATH_BETAS` for your local setup. Run the script to fit the exported motion data to SMPL-H:
+
+    ```bash
+    cd "/path/to/InterAct"
+    bash process/scripts/bvh2smplh.sh
+    ```
   
     Expected File Structure:
-    ```bash
+    ```
     data/humoto
+    ├── human_betas.npy
     ├── raw
         ├── humoto_0805
         │   ├── sequence_name
@@ -376,10 +393,10 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
         |   |   ├── human_pose_params_matrix.pt
         |   |   └── obj_pose.npz
         │   └──  ...
-        |           
+        │       
         │── smplh
         │   ├── sequence_name.npz
-        │   └──  ...
+        │   └── ...
         │       
         │── smplx
         │   ├── activating_floor_lamp_with_right_hand-485.npz
@@ -398,6 +415,7 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
         └── vis/
         
     ```
+    
 
 4. Data Processing
 

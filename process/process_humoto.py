@@ -12,14 +12,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+# os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 from process.utils import ObjectSequence, HumanSequence, Processor, Debugger
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
 dict_path = {
     'PATH_RAW': './data/humoto/raw',
-    'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh', # where we load human motion sequences
+    'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh1005_ourbetas', # where we load human motion sequences
     'MOTION_PATH_RAW_OBJECT': './data/humoto/raw/output_process', # where we load object motion sequences
     'OBJECT_PATH_RAW': './data/humoto/raw/humoto_objects_0805', # where we load object meshes
     
@@ -142,4 +142,3 @@ for i, name in tqdm(enumerate(sequence_names)):
 
 logging.info(f"Successfully processed {len(success)} sequences: {success}")
 logging.info(f"Failed to process {len(failure)} sequences: {failure}")
-

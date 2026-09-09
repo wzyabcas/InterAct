@@ -23,7 +23,7 @@ dict_path = {
     'PATH_ROOT': './data/humoto/',
     
     'METADATA_PATH': './data/humoto/raw/humoto_0805',
-    'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh',
+    'MOTION_PATH_RAW_HUMAN': './data/humoto/raw/smplh1005_ourbetas',
     'MOTION_PATH_RAW_OBJECT': './data/humoto/raw/output_process',
     'OBJECT_PATH_RAW': './data/humoto/raw/humoto_objects_0805',
 

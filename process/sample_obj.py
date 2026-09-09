@@ -3,7 +3,6 @@ import os
 import numpy as np
 
 datasets = ['behave', 'intercap', 'grab', 'omomo', 'humoto']
-datasets = ['humoto']
 data_root = './data'
 id_root = './assets/sample_objids'
 for dataset in datasets:
@@ -22,4 +21,3 @@ for dataset in datasets:
         np.save(os.path.join(OBJECT_PATH, f"{obj_name}/sample_points.npy"), obj_points)
    
         
-

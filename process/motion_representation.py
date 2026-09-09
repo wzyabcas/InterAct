@@ -572,7 +572,6 @@ if __name__ == "__main__":
     all_frames = 0
     fid_r, fid_l = [61, 52, 53, 40, 34, 49, 40], [29, 30, 18, 19, 7, 2, 15]
     datasets = ['behave','intercap', 'grab', 'omomo', 'humoto']
-    datasets = ['humoto_test']
     data_root = './data'
     for dataset in datasets:
         print(f'Loading {dataset} ...')
@@ -609,11 +608,11 @@ if __name__ == "__main__":
                 verts, faces = visualize_smpl(name, MOTION_PATH, 'smplx', 16)
                 markers = verts[:,markerset_smplx]
 
-            elif dataset.upper() == 'HUMOTO_TEST':
+            elif dataset.upper() == 'HUMOTO':
                 verts, faces = visualize_smpl(name, MOTION_PATH, 'smplh', 10)
                 markers = verts[:,markerset_smplh]
                     
-            if dataset.upper() == 'HUMOTO_TEST':
+            if dataset.upper() == 'HUMOTO':
                 sequence_path = os.path.join(MOTION_PATH, name)
                 object_files = sorted(
                     filename
