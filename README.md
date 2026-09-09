@@ -346,8 +346,9 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
 
   
     Expected File Structure:
-    ```bash
+    ```
     data/humoto
+    ├── human_betas.npy
     ├── raw
         ├── humoto_0805
         │   ├── sequence_name
@@ -376,10 +377,8 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
         |   |   ├── human_pose_params_matrix.pt
         |   |   └── obj_pose.npz
         │   └──  ...
-        |           
-        │── smplh
-        │   ├── sequence_name.npz
-        │   └──  ...
+        │       
+        │── smplh          
         │       
         │── smplx
         │   ├── activating_floor_lamp_with_right_hand-485.npz
@@ -398,6 +397,18 @@ The **GRAB**, **BEHAVE**, **INTERCAP** datasets are available for academic resea
         └── vis/
         
     ```
+  -  
+    Run the processing script to convert motion from BVH to SMPL-H:
+
+    ```bash
+    python process/bvh2smplh.py --number i
+    ```
+
+    The number argument selects a processing chunk;
+    
+    Run the command once for each value from 0 to 9 to process all sequences.
+
+    
 
 4. Data Processing
 

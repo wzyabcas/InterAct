@@ -6,12 +6,15 @@ Author: Xianghui, 12 January 2022
 import numpy as np
 import torch
 import pickle as pkl
+import os
+
 from os.path import join
 # import pickle as pkl
 # from os.path import join
 # import torch
 # import numpy as np
 
+PATH_PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 def grab_prior(root_path):
     lhand_data, rhand_data = load_grab_prior(root_path)
@@ -117,7 +120,7 @@ class Prior(object):
         self.device = device
         self.end = end
         
-        model_root='../assets'
+        model_root=os.path.join(PATH_PROJECT, "assets")
         file = join(model_root, 'priors', 'body_prior.pkl')
         dat = pkl.load(open(file, 'rb'))
         self.priors =  ThMahalanobis(dat['mean'],

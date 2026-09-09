@@ -1,8 +1,8 @@
-data
+/data/*
+!/data/human_betas.npy
 __pycache__/
 models/
 
-1GITHUB
 data/humoto/
 data/humoto_test/
 
@@ -10,3 +10,4 @@ AGENT.md
 .vscode/
 findings/
 results/
+
