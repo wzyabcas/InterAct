@@ -43,11 +43,13 @@ smplh10 = {'male': smplh_model_male, 'female': smplh_model_female}
 smplx_model_male = smplx.create(MODEL_PATH, model_type='smplx',
                         gender = 'male',
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
                            
 smplx_model_female = smplx.create(MODEL_PATH, model_type='smplx',
                         gender="female",
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
 
 smplx_model_neutral = smplx.create(MODEL_PATH, model_type='smplx',

@@ -7,6 +7,13 @@ import smplx
 import trimesh
 from scipy.spatial.transform import Rotation
 from copy import copy
+
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
 from process.markerset import *
 from human_body_prior.body_model.body_model import BodyModel
 from pytorch3d.transforms import *
@@ -21,11 +28,13 @@ MODEL_PATH = './models'
 smplh_model_male = smplx.create(MODEL_PATH, model_type='smplh',
                         gender="male",
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
 
 smplh_model_female = smplx.create(MODEL_PATH, model_type='smplh',
                         gender="female",
                         use_pca=False,
+                        flat_hand_mean=True,
                         ext='pkl')
 
 smplh_model_neutral = smplx.create(MODEL_PATH, model_type='smplh',
@@ -562,7 +571,8 @@ if __name__ == "__main__":
     all_clips = 0
     all_frames = 0
     fid_r, fid_l = [61, 52, 53, 40, 34, 49, 40], [29, 30, 18, 19, 7, 2, 15]
-    datasets = ['behave','intercap', 'grab', 'omomo']
+    datasets = ['behave','intercap', 'grab', 'omomo', 'humoto']
+    datasets = ['humoto_test']
     data_root = './data'
     for dataset in datasets:
         print(f'Loading {dataset} ...')
@@ -598,21 +608,68 @@ if __name__ == "__main__":
             elif dataset.upper() == 'OMOMO':
                 verts, faces = visualize_smpl(name, MOTION_PATH, 'smplx', 16)
                 markers = verts[:,markerset_smplx]
-           
-            
-           
-            with np.load(os.path.join(MOTION_PATH, name, 'object.npz'), allow_pickle=True) as f:
-                obj_angles, obj_trans, obj_name = f['angles'], f['trans'], str(f['name'])
-            angle_matrix = Rotation.from_rotvec(obj_angles).as_matrix()
-            obj_rot6D = matrix_to_rotation_6d_np(angle_matrix)            
 
-            obj_data = np.concatenate([obj_rot6D, obj_trans], axis=-1)
-            obj_points = np.load(os.path.join(OBJECT_PATH, obj_name, 'sample_points.npy'))
-            data = get_representation_canonical(markers.detach().cpu().numpy(), obj_data, obj_points)
-            
-            
-            # 476 human + 18 obj + 6*78 rel obj
-            np.save(os.path.join(MOTION_PATH, name, 'motion.npy'), data)
+            elif dataset.upper() == 'HUMOTO_TEST':
+                verts, faces = visualize_smpl(name, MOTION_PATH, 'smplh', 10)
+                markers = verts[:,markerset_smplh]
+                    
+            if dataset.upper() == 'HUMOTO_TEST':
+                sequence_path = os.path.join(MOTION_PATH, name)
+                object_files = sorted(
+                    filename
+                    for filename in os.listdir(sequence_path)
+                    if filename.startswith('object_')
+                    and filename.endswith('.npz')
+                )
+
+                if not object_files:
+                    raise FileNotFoundError(
+                        f"No object_*.npz files found in {sequence_path}"
+                    )
+
+                object_motions = []
+                motion_object_names = []
+                markers_np = markers.detach().cpu().numpy()
+
+                for object_file in object_files:
+                    object_path = os.path.join(sequence_path, object_file)
+
+                    with np.load(object_path, allow_pickle=True) as f:
+                        obj_angles = f['angles']
+                        obj_trans = f['trans']
+                        mesh_name = str(f['mesh_name'].item())
+                        instance_name = str(f['instance_name'].item())
+
+                    angle_matrix = Rotation.from_rotvec(obj_angles).as_matrix()
+                    obj_rot6D = matrix_to_rotation_6d_np(angle_matrix)
+                    obj_data = np.concatenate([obj_rot6D, obj_trans],axis=-1)
+                    obj_points = np.load(os.path.join(OBJECT_PATH,mesh_name,'sample_points.npy'))
+
+                    object_data = get_representation_canonical(markers_np,obj_data,obj_points)
+
+                    object_motions.append(object_data)
+                    motion_object_names.append(instance_name)
+
+                data = np.stack(object_motions,axis=1)
+
+                np.save(os.path.join(MOTION_PATH,name,'motion_object_names.npy'),np.asarray(motion_object_names))
+
+            else:
+                with np.load(os.path.join(MOTION_PATH,name,'object.npz'),allow_pickle=True) as f:
+                    obj_angles = f['angles']
+                    obj_trans = f['trans']
+                    obj_name = str(f['name'])
+
+                angle_matrix = Rotation.from_rotvec(obj_angles).as_matrix()
+                obj_rot6D = matrix_to_rotation_6d_np(angle_matrix)
+
+                obj_data = np.concatenate([obj_rot6D, obj_trans],axis=-1)
+
+                obj_points = np.load(os.path.join(OBJECT_PATH,obj_name,'sample_points.npy'))
+
+                data = get_representation_canonical(markers.detach().cpu().numpy(),obj_data,obj_points)
+
+                np.save( os.path.join(MOTION_PATH,name,'motion.npy'), data)
             
             seq_len = data.shape[0]
             frame_num += seq_len
