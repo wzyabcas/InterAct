@@ -1,5 +1,5 @@
 /data/*
-!/data/human_betas.npy
+!/data/human_model/human_betas.npy
 __pycache__/
 models/
 

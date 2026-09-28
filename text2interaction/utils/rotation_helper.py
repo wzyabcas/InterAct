@@ -64,7 +64,14 @@ def quaternion_to_matrix_numpy(quaternion: np.ndarray) -> np.ndarray:
         quat = quaternion[..., :4].reshape(-1, 4)
         translation = quaternion[..., 4:7].reshape(-1, 3)
         
-        rotation = R.from_quat(quat=quat, scalar_first=True)
+        # rotation = R.from_quat(quat=quat, scalar_first=True)
+        from IPython import embed; embed()
+        # quat[0] = [0.70718545 0.7068709  0.01330785 0.00672235], which is scalar first
+        # scipy 1.10.1 expects scalar last
+        quat_xyzw = quat[..., [1, 2, 3, 0]]  
+        quat = quat_xyzw
+        rotation = R.from_quat(quat)
+        
         rotation_matrices = rotation.as_matrix()
         
         # Create 4x4 transformation matrices
@@ -133,8 +140,12 @@ def matrix_to_quaternion_numpy(matrix: np.ndarray) -> np.ndarray:
         translation = matrix[..., :3, 3].reshape(-1, 3)
         
         rotation = R.from_matrix(rotation_matrices)
-        quat = rotation.as_quat(scalar_first=True)  # Returns [w, x, y, z]
-        
+        try:
+            quat = rotation.as_quat(scalar_first=True)  # Returns [w, x, y, z]
+        except:
+            quat = rotation.as_quat()  # Returns [x, y, z, w]
+            quat_wxyz = quat[..., [3, 0, 1, 2]]  # Convert to [w, x, y, z]
+            quat = quat_wxyz
         # Combine quaternion and translation
         result = np.zeros((rotation_matrices.shape[0], 7), dtype=quat.dtype)
         result[:, :4] = quat

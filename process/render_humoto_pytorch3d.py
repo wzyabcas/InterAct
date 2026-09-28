@@ -40,7 +40,7 @@ parser.add_argument("-n", "--number",type=int, default=0,
 args = parser.parse_args()
 
 # bp='/projects/bbsg/ziyin/HUMOTO/up_bone_humoto'
-bp='/work/nvme/bdeg/jianqi/InterAct/data/up_bone_humoto'
+bp = HUMOTO_DATASET_DIR
 LISTS = sorted(os.listdir(bp))
 # L = len(LISTS)//20+1
 # LISTS = LISTS[args.number*L:min(args.number*L+L,len(LISTS))]
@@ -103,12 +103,6 @@ for nn in tqdm(LISTS[:]):
     bone_model = 'up_bone' if args.up_bone else 'mixamo_bone'
     humoto_model_path = f'human_model_{bone_model}_{y_up}.json'
     # print(humoto_model_path,'HUMOTO_P')
-    
-    print(os.path.join(HUMAN_MODEL_DIR, humoto_model_path))
-    if not os.path.exists(os.path.join(HUMAN_MODEL_DIR, humoto_model_path)):
-        raise FileNotFoundError(f"Human model file not found: {os.path.join(HUMAN_MODEL_DIR, humoto_model_path)}")
-    exit()
-    
     
     human_model = HumanModelDifferentiable(character_data_path=os.path.join(HUMAN_MODEL_DIR, humoto_model_path), device=device)
     human_pose_params_matrix = {bone_name: quaternion_to_matrix(human_pose_params[bone_name]) for bone_name in human_pose_params}
