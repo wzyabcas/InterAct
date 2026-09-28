@@ -38,6 +38,131 @@ smplh_model_neutral = smplx.create(MODEL_PATH, model_type='smplh',
 smplh10 = {'male': smplh_model_male,'female':smplh_model_female,'neutral':smplh_model_neutral}
 
 
+class SmplhOptmize10_fulljoints(nn.Module):
+    def __init__(self, gender, batch_size, frame_times,extra=[],joint_nums=52):
+        device=torch.device('cuda:0')
+        super(SmplhOptmize10_fulljoints, self).__init__()
+        self.extra=[]
+        self.joint_nums = joint_nums
+        self.smpl_model = smplh10[gender]
+        self.pred_pose = Variable(torch.tensor(np.zeros((batch_size*frame_times, 63))).float().to(device),requires_grad=True)
+        self.glo_pose = Variable(torch.tensor(np.zeros((batch_size*frame_times, 3))).float().to(device),requires_grad=True)
+
+        #self.pred_pose =torch.tensor(np.zeros((frame_times, 63))).float().to(device)
+        self.pred_pose.requires_grad=True
+        self.djoints_index =list(range(22))+list(range(25,55)) 
+
+
+        self.pred_betas = Variable(torch.tensor(np.zeros((batch_size, 10))).float().to(device),requires_grad=True)
+        self.pred_trans = Variable(torch.tensor(np.zeros((batch_size*frame_times, 3))).float().to(device),requires_grad=True)
+        self.left_hand_pose = Variable(torch.tensor(np.zeros((batch_size*frame_times, 45))).float().to(device),requires_grad=True)
+        self.right_hand_pose = Variable(torch.tensor(np.zeros((batch_size*frame_times, 45))).float().to(device),requires_grad=True)
+        self.frame_times = frame_times
+        self.hand_prior=HandPrior(prior_path=os.path.join(PROJECT_PATH,'assets'), device=device)
+        self.prior=Prior()
+
+    def init_guess(self, markers):
+        with torch.no_grad():
+        
+            verts,joints=self.forward_human()
+            # print(verts.shape,markers.shape)
+            H=(torch.sum((joints[:,[1,2,16,17]]-markers[:,[1,2,16,17]]),dim=1)/4).float()
+        self.pred_trans=Variable(copy.deepcopy(H),requires_grad=True)#torch.tensor(H)
+        # print(self.pred_trans.shape)
+
+
+            
+        # body_optimizer = torch.optim.LBFGS([self.pred_trans,self.pred_pose,self.pred_betas,self.left_hand_pose,self.right_hand_pose], max_iter=100,
+        #                                     lr=1e-2, line_search_fn='strong_wolfe')
+        #self.optimizer= torch.optim.Adam([self.pred_trans,self.pred_pose,self.pred_betas,self.left_hand_pose,self.right_hand_pose], lr=0.01)
+            
+
+    def ankle_loss(self):
+        return torch.sum(torch.exp(self.pred_pose[:, [55-3, 58-3, 12-3, 15-3]] * torch.tensor([1., -1., -1, -1.], device=self.pred_pose.device)) ** 2)
+    def smooth(self):
+        return torch.sum((self.pred_pose[1:]-self.pred_pose[:-1])**2)+torch.sum((self.left_hand_pose[1:]-self.left_hand_pose[:-1])**2)+\
+        torch.sum((self.right_hand_pose[1:]-self.right_hand_pose[:-1])**2)+\
+        torch.sum((self.pred_trans[1:]-self.pred_trans[:-1])**2)+torch.sum((self.glo_pose[1:]-self.glo_pose[:-1])**2)
+    def forward_human(self):
+        smpl_output = self.smpl_model(body_pose=self.pred_pose[:, :],
+            global_orient=self.glo_pose,
+            left_hand_pose=self.left_hand_pose,
+            right_hand_pose=self.right_hand_pose,
+            betas=self.pred_betas[:,None].repeat(1,self.frame_times,1).reshape(-1,10),
+            transl=self.pred_trans,)
+        verts = smpl_output.vertices
+        joints = smpl_output.joints
+        # print(joints.shape,'JOINTS')
+        return verts,joints
+    # def gmof(self,x, sigma):
+    
+    #     x_squared = x ** 2
+    #     sigma_squared = sigma ** 2
+    #     return (sigma_squared * x_squared) / (sigma_squared + x_squared)
+
+    def optimize_cam(self,markers_gt):
+        cam_t_optimizer = torch.optim.LBFGS([self.pred_trans,self.glo_pose], max_iter=100,
+                                            lr=1e-2, line_search_fn='strong_wolfe')
+        for i in tqdm(range(10)):
+            def closure():
+                cam_t_optimizer.zero_grad()
+                verts,joints=self.forward_human()
+                # insert
+                # if self.joint_nums ==52:
+                #     pred_markers = joints[:,self.djoints_index] 
+                # else:
+                pred_markers = joints[:,:self.joint_nums] 
+                loss1=100*(torch.sum((pred_markers-markers_gt)**2))
+                # loss2=5*self.smooth()
+                loss=loss1#+loss2
+                loss.backward()
+                return loss
+            cam_t_optimizer.step(closure)
+            
+    def beta_restrict(self):
+        return torch.sum(self.pred_betas**2)
+    def optimize_whole(self,markers_gt):
+        body_optimizer = torch.optim.LBFGS([self.pred_trans,self.pred_pose,self.glo_pose,self.pred_betas,self.left_hand_pose,self.right_hand_pose], max_iter=100,
+                                            lr=1e-2, line_search_fn='strong_wolfe')
+        
+        for i in tqdm(range(100)):
+            def closure():
+                body_optimizer.zero_grad()
+                verts,joints=self.forward_human()
+                # if self.joint_nums == 52:
+                    
+                #     pred_markers = joints[:,self.djoints_index]
+                # else:
+                pred_markers = joints[:,:self.joint_nums]
+                    
+                loss1=100*(torch.sum((pred_markers-markers_gt)**2))
+                # loss2=2*self.smooth()
+                # loss3=5*self.ankle_loss()
+                loss4=5*self.beta_restrict()
+                loss5 =torch.sum(self.left_hand_pose**2+self.right_hand_pose**2)+torch.sum(self.pred_pose**2)+torch.sum(self.glo_pose**2)
+                # loss5=torch.sum(self.hand_prior(self.left_hand_pose,left_or_right=0)**2+self.hand_prior(self.right_hand_pose,left_or_right=1)**2)+\
+                #         self.prior.forward(self.pred_pose)+torch.sum(self.left_hand_pose**2+self.right_hand_pose**2)+torch.sum(self.pred_pose**2)+torch.sum(self.glo_pose**2)
+                # +loss5
+                loss=loss1+loss4+loss5
+                loss.backward()
+                #print(loss.shape)
+                return loss
+
+            body_optimizer.step(closure)
+        with torch.no_grad():
+            verts,joints=self.forward_human()
+            return verts.detach(), self.smpl_model.faces.astype(np.int32),torch.cat([self.glo_pose,self.pred_pose,self.left_hand_pose,self.right_hand_pose],-1).detach().cpu().numpy(),self.pred_betas.detach().cpu().numpy(),self.pred_trans.detach().cpu().numpy()
+            
+        
+        
+
+    def forward(self,markers_gt):
+        self.init_guess(markers_gt)
+        self.optimize_cam(markers_gt)
+        return self.optimize_whole(markers_gt)
+
+
+
 class SmplhOptmize10_fulljoints_mixamo(nn.Module):
     """
     parameters:

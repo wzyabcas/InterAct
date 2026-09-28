@@ -8,7 +8,7 @@ import argparse
 from pytorch3d.transforms import matrix_to_axis_angle
 from scipy.spatial.transform import Rotation as R
 
-from text2interaction.sample.marker2smpl import SmplhOptmize10_fulljoints_mixamo
+from text2interaction.sample.marker2smpl import SmplhOptmize10_fulljoints_mixamo, SmplhOptmize10_fulljoints
 from text2interaction.render.mesh_viz import visualize_body_objs
 # from text2interaction.utils.rotation_helper import *
 
@@ -107,34 +107,89 @@ def numpy_to_pd(points,path):
 
     # Save to file
     o3d.io.write_point_cloud(path, pcd)
-    
+ 
+def k_th_frame(path, k):
+    """Extract zero-based frame k as a dictionary of CPU tensors shaped (1, 3)."""
+    if not isinstance(k, (int, np.integer)) or isinstance(k, (bool, np.bool_)):
+        raise TypeError("k must be an integer frame index")
+
+    data = torch.load(path, map_location='cpu', weights_only=True)
+    if not isinstance(data, dict) or not data:
+        raise ValueError("Expected a non-empty dictionary of joint positions")
+
+    frame_data = {}
+    for name, positions in data.items():
+        if not isinstance(positions, torch.Tensor) or positions.ndim != 2 or positions.shape[1] != 3:
+            raise ValueError(f"Expected joint {name!r} to contain a (T, 3) tensor")
+        if not 0 <= k < positions.shape[0]:
+            raise IndexError(
+                f"Frame {k} is out of range for joint {name!r}; "
+                f"expected 0 <= k < {positions.shape[0]}"
+            )
+        frame_data[name] = positions[k:k+1].detach().clone()
+
+    frame_shape = next(iter(frame_data.values())).shape
+    print("Number of joints:", len(frame_data))
+    print("shape:", (len(frame_data), *frame_shape))
+    return frame_data
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="示例：解析 --number 参数")
 
+    # TODO: Sept.9
+    # (1) check whether human_pos.npz is given from humoto, if so, do from human_pos.npz.
+    # (2) don't use --number, rewrite into a unified for loop.
+    # (3) simulate humoto, data replay in simulation (?) how to build obs, and reward.
+    # (1) T-pose for calculating human_pos.npy
+    # (2) paste line101-114 of render_humoto_pytorch3d.py output_process here, so that we can obtain output_process
+    # output_process is relied on up_bone folder which is processed from humoto repo.
+
+    """
+    (1). Check if the Delta can easily do the headless rendering in isaacgym or not. If not, use the jetstream2 for visualization and rendering
+
+    (2). Data replay and visualization (GRAB, Arctic)
+
+    (3).  One-sequence overfitting (GRAB, Arctic)
+
+    (4). Train the teacher policy on multiple sequences (GRAB, Arctic)
+
+    """
     # d= dict(np.load('/projects/bbsg/ziyin/humoto/human_model/human_pos.npz',allow_pickle=True))
-    # print(len(list(d.keys())))
-    
-    # T=0
-    # for key,value in d.items():
-    #     T = value.shape[0]
-    #     break
-    # A = np.zeros((52,3))
-    # # gender = 'female'
-    # # model=SmplhOptmize10_fulljoints_mixamo(gender, 1, T,extra=[],joint_nums=52)
-    # for key,value in mapping.items():
-    #     A[value] = d[key]
+    d = k_th_frame("/work/nvme/bdeg/jianqi/InterAct/data/output_process/add_ingredients_from_deep_plate_to_mixing_bowl_with_right_hand-639/human_joints_mixamo.pt", 0)
+    print(len(list(d.keys())))
+
+    T=0
+    for key,value in d.items():
+        T = value.shape[0]
+        break
+    A = np.zeros((52,3))
+    # gender = 'female'
+    # model=SmplhOptmize10_fulljoints_mixamo(gender, 1, T,extra=[],joint_nums=52)
+    for key,value in mapping.items():
+        A[value] = d[key]
+    np.save('./data/test_human_pos2smplh.npy',A)
     # np.save('/projects/bbsg/ziyin/humoto/human_model/human_pos2smplh.npy',A)
     
+    A = np.load('./data/test_human_pos2smplh.npy').reshape(1,-1,3)
     # A =np.load('/projects/bbsg/ziyin/humoto/human_model/human_pos2smplh.npy').reshape(1,-1,3)
-    # gender = 'female'
-    # model=SmplhOptmize10_fulljoints(gender, 1, 1,extra=[],joint_nums=52)
-    # V,F,poses,betas,trans = model(torch.from_numpy(A).float().cuda())
-    # print(betas.shape)
+    gender = 'female' # make sure coordiate with fk.
+    model=SmplhOptmize10_fulljoints(gender, 1, 1,extra=[],joint_nums=52)
+    V,F,poses,betas,trans = model(torch.from_numpy(A).float().cuda())
+    print(betas.shape)
+    np.save('./data/test_human_betas.npy',betas.reshape(-1))
     # np.save('/projects/bbsg/ziyin/humoto/human_model/human_betas.npy',betas.reshape(-1))
     
     # visualize_body(V.detach().cpu().numpy(),F,save_path =f'./zm2smplh/at.mp4')
     
     betas = np.load(os.path.join(PATH_PROJECT, "data", "human_betas.npy"))
+    
+    # compare the two betas
+    betas_ziyin = np.load('./data/human_betas.npy')
+    betas_generated = np.load('./data/test_human_betas.npy')
+    
+    betas_diff = np.abs(betas_ziyin - betas_generated)
+    print("Max difference between betas:", np.max(betas_diff))
+    exit()
 
     # 添加 --number 参数，类型为 int，可以通过 required=True 强制用户必须传入
     parser.add_argument('--number', type=int, required=True, help="输入一个整数")
