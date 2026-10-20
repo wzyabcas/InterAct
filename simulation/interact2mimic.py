@@ -371,42 +371,47 @@ smplh_model_neutral = smplx.create(MODEL_PATH, model_type='smplh',
 smplh10 = {'male': smplh_model_male, 'female': smplh_model_female, 'neutral': smplh_model_neutral}
 
 ######################################## smplx 10 ########################################
+# These models consume absolute axis angles after PCA decoding (mean included).
 smplx_model_male = smplx.create(MODEL_PATH, model_type='smplx',
         gender = 'male',
         use_pca=False,
+        flat_hand_mean=True,
         ext='pkl')
 
 smplx_model_female = smplx.create(MODEL_PATH, model_type='smplx',
         gender="female",
         use_pca=False,
+        flat_hand_mean=True,
         ext='pkl')
 
 smplx_model_neutral = smplx.create(MODEL_PATH, model_type='smplx',
         gender="neutral",
         use_pca=False,
+        flat_hand_mean=True,
         ext='pkl')
 
 smplx10 = {'male': smplx_model_male, 'female': smplx_model_female, 'neutral': smplx_model_neutral}
 
 ######################################## smplx 10 pca 12 ########################################
+# InterCap coefficients use the learned hand mean, added exactly once here.
 smplx12_model_male = smplx.create(MODEL_PATH, model_type='smplx',
         gender="male",
         num_pca_comps=12,
         use_pca=True,
-        flat_hand_mean = True,
+        flat_hand_mean = False,
         ext='pkl')
 
 smplx12_model_female = smplx.create(MODEL_PATH, model_type='smplx',
         gender="female",
         num_pca_comps=12,
         use_pca=True,
-        flat_hand_mean = True,
+        flat_hand_mean = False,
         ext='pkl')
 smplx12_model_neutral = smplx.create(MODEL_PATH, model_type='smplx',
         gender="neutral",
         num_pca_comps=12,
         use_pca=True,
-        flat_hand_mean = True,
+        flat_hand_mean = False,
         ext='pkl')
 smplx12 = {'male': smplx12_model_male, 'female': smplx12_model_female, 'neutral': smplx12_model_neutral}
 
@@ -461,6 +466,11 @@ smplx16_model_neutral = BodyModel(bm_fname=surface_model_neutral_fname,
 smplx16 = {'male': smplx16_model_male, 'female': smplx16_model_female, 'neutral': smplx16_model_neutral}
 
 def decode_pca_pose(pca_pose, gender, model_type, num_pca_comps):
+    """Decode PCA coefficients into absolute hand axis angles, including one mean."""
+    if model_type != 'smplx' or num_pca_comps != 12:
+        raise ValueError('This decoder expects the InterCap 12-component SMPL-X model')
+    if pca_pose.ndim != 2 or pca_pose.shape[1] != 66 + 2 * num_pca_comps:
+        raise ValueError('Expected body pose plus two PCA coefficient vectors')
     if model_type == 'smplx':
         smplx_model = smplx12[gender]
         global_orient = pca_pose[:, :3]
@@ -472,11 +482,17 @@ def decode_pca_pose(pca_pose, gender, model_type, num_pca_comps):
         full_pose = torch.cat([global_orient, body_pose, left_hand_pose, right_hand_pose], dim=1)
     return full_pose
 
-def forward_smpl(poses, betas, trans, gender, model_type, num_betas, use_pca=False):
+def forward_smpl(poses, betas, trans, gender, model_type, num_betas, use_pca=False,
+                 smplx_model_override=None):
     """
     Load and visualize SMPL data for a single sequence
     """
     frame_times = poses.shape[0]
+    expected_width = 90 if use_pca else 156
+    if poses.ndim != 2 or poses.shape[1] != expected_width:
+        raise ValueError(f'Expected pose width {expected_width}, got {tuple(poses.shape)}')
+    if smplx_model_override is not None and (model_type != 'smplx' or num_betas != 10 or use_pca):
+        raise ValueError('Personalized model requires absolute SMPL-X poses and 10 betas')
     
     # Convert trans to tensor if it's numpy, otherwise ensure it's float tensor
     if isinstance(trans, np.ndarray):
@@ -509,7 +525,8 @@ def forward_smpl(poses, betas, trans, gender, model_type, num_betas, use_pca=Fal
                         betas=torch.from_numpy(betas[None, :]).repeat(frame_times, 1).float(),
                         transl=trans_tensor,)
             else:
-                smpl_model = smplx10[gender]
+                # Absolute poses already contain the PCA mean; never add it again.
+                smpl_model = smplx_model_override if smplx_model_override is not None else smplx10[gender]
                 smplx_output = smpl_model(body_pose=poses[:, 3:66].float(),
                         global_orient=poses[:, :3].float(),
                         left_hand_pose=poses[:, 66:111].float(),
@@ -629,6 +646,12 @@ def main(args):
             joints = to_cpu(smplx_output.joints)
             beta = smpl_model.betas[0].detach().cpu().numpy()
 
+            # Keep the same personalized mesh when reconstructing the decoded pose.
+            grab_absolute_model = smplx.create(
+                model_path=MODEL_PATH, model_type='smplx', gender=gender,
+                use_pca=False, flat_hand_mean=True, v_template=sbj_vtemp,
+                num_betas=len(beta), batch_size=T)
+
             left_hand_pca = torch.from_numpy(poses[:, 66:90]).float()
             right_hand_pca = torch.from_numpy(poses[:, 90:114]).float()
             left_hand_full = left_hand_pca @ smpl_model.left_hand_components[:24].cpu() + smpl_model.left_hand_mean.cpu()
@@ -642,7 +665,6 @@ def main(args):
 
             root_trans = trans.copy()
             smpl_data_entry = {'gender': gender, 'fps': 30.0}
-            grab_n_comps = n_comps
 
         else:
             motion_file = None
@@ -687,7 +709,7 @@ def main(args):
             vertices, joints = forward_smpl(pose_aaa, beta, root_trans, str(smpl_data_entry['gender']), 'smplx', 16)
         elif dataset_name.upper() == 'GRAB':
             # vertices, joints = forward_smpl(pose_aaa, beta, root_trans, str(smpl_data_entry['gender']), 'smplx', 10)
-            flat_hand_mean = False
+            flat_hand_mean = True
         
         joint_number = int(pose_aa.shape[1] / 3)
         print("pose_aa shape: ", pose_aa.shape)
@@ -935,19 +957,13 @@ def main(args):
             elif dataset_name.upper() == 'NEURALDOME' or dataset_name.upper() == 'IMHD':
                 verts, joints = forward_smpl(pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplh', 16)
             elif dataset_name.upper() == 'INTERCAP':
-                verts, joints = forward_smpl(pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplx', 10, True)
+                verts, joints = forward_smpl(pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplx', 10)
             elif dataset_name.upper() == 'OMOMO':
                 verts, joints = forward_smpl(pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplx', 16)
             elif dataset_name.upper() == 'GRAB':
-                # GRAB uses SMPLX with PCA components (typically 12, same as INTERCAP)
-                # Use PCA=True if n_comps is 12, otherwise use standard model
-                print("grab_n_comps: ", grab_n_comps)
-                print("beta shape: ", beta.shape)
-                use_pca = (grab_n_comps == 12)
-                verts, joints = forward_smpl(pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplx', 10, use_pca)
-                # If using PCA, decode the pose similar to INTERCAP
-                if use_pca:
-                    pose_aa = decode_pca_pose(pose_aa, str(smpl_data_entry['gender']), 'smplx', grab_n_comps).numpy()
+                verts, joints = forward_smpl(
+                    pose_aa, beta, trans, str(smpl_data_entry['gender']), 'smplx', 10,
+                    smplx_model_override=grab_absolute_model)
 
             offset = joints[:30, 0] - trans[:30]
             diff_fix = ((verts[:30] - offset[:, None])[:30, ..., -1].min(dim=-1).values).min()
