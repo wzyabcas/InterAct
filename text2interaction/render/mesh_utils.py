@@ -18,7 +18,8 @@ import pyrender
 import trimesh
 import numpy as np
 import sys
-from render.utils import colors
+# from render.utils import colors
+from .utils import colors
 
 def get_checkerboard_plane(plane_mins, center=True):
     minx, maxx, miny, maxy = plane_mins

@@ -1,3 +1,10 @@
-data
+/data/*
+!/data/human_model/human_betas.npy
 __pycache__/
 models/
+
+data/humoto/
+
+.vscode/
+results/
+
